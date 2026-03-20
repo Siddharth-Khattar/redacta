@@ -10,12 +10,25 @@ export interface RedactionTarget {
   context: string | null;
 }
 
+export interface UsageStats {
+  input_tokens: number;
+  output_tokens: number;
+  thinking_tokens: number;
+  total_tokens: number;
+  model: string;
+  gemini_duration_ms: number;
+  total_duration_ms: number;
+  estimated_cost_usd: number;
+  pricing_source: string;
+}
+
 export interface RedactionResponse {
   redacted_pdf: string;
   redaction_count: number;
   targets: RedactionTarget[];
   reasoning: string | null;
   permanent: boolean;
+  usage: UsageStats;
 }
 
 interface RedactionError {

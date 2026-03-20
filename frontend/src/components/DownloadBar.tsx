@@ -1,5 +1,5 @@
-// ABOUTME: Bottom bar with redaction stats and download/retry actions.
-// ABOUTME: Clean stat display with warm accent download button.
+// ABOUTME: Bottom bar with redaction stats, usage metrics, and download/retry actions.
+// ABOUTME: Shows redaction count, token usage, cost estimate, and processing time.
 
 import { ArrowDownToLine, RotateCcw } from "lucide-react";
 import { downloadFromBase64, type RedactionResponse, type RedactionTarget } from "../api/redaction";
@@ -10,6 +10,26 @@ interface DownloadBarProps {
   onRedactAgain: () => void;
 }
 
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function formatTokenCount(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
+  return String(count);
+}
+
+function formatCost(usd: number): string {
+  if (usd < 0.01) return `$${usd.toFixed(4)}`;
+  return `$${usd.toFixed(3)}`;
+}
+
+function Dot() {
+  return <span className="text-text-faint">&middot;</span>;
+}
+
 export function DownloadBar({ result, originalFileName, onRedactAgain }: DownloadBarProps) {
   const handleDownload = () => {
     const outputName = originalFileName.replace(/\.pdf$/i, "_redacted.pdf");
@@ -17,23 +37,59 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
   };
 
   const uniquePages = new Set(result.targets.map((t: RedactionTarget) => t.page)).size;
+  const { usage } = result;
+  const cost = usage.estimated_cost_usd;
 
   return (
     <div className="flex-none border-t border-border px-6 py-3 bg-raised">
       <div className="flex items-center justify-between">
         {/* Stats */}
-        <div className="text-sm text-text-sub flex items-center gap-3">
+        <div className="text-sm text-text-sub flex items-center gap-3 flex-wrap">
           <span>
             <span className="font-semibold text-text">{result.redaction_count}</span>{" "}
             {result.redaction_count === 1 ? "redaction" : "redactions"}
           </span>
           {uniquePages > 0 && (
             <>
-              <span className="text-text-faint">&middot;</span>
+              <Dot />
               <span>
                 <span className="font-semibold text-text">{uniquePages}</span>{" "}
                 {uniquePages === 1 ? "page" : "pages"}
               </span>
+            </>
+          )}
+          <Dot />
+          <span className="font-mono text-xs text-text-dim" title="Total processing time">
+            {formatDuration(usage.total_duration_ms)}
+          </span>
+          {usage.total_tokens > 0 && (
+            <>
+              <Dot />
+              <span
+                className="font-mono text-xs text-text-dim"
+                title={[
+                  `Input: ${usage.input_tokens.toLocaleString()}`,
+                  `Output: ${usage.output_tokens.toLocaleString()}`,
+                  usage.thinking_tokens > 0
+                    ? `Thinking: ${usage.thinking_tokens.toLocaleString()}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join("\n")}
+              >
+                {formatTokenCount(usage.total_tokens)} tokens
+              </span>
+              {cost > 0 && (
+                <>
+                  <Dot />
+                  <span
+                    className="font-mono text-xs text-text-dim"
+                    title={`Estimated cost for ${usage.model} (${usage.pricing_source})`}
+                  >
+                    ~{formatCost(cost)}
+                  </span>
+                </>
+              )}
             </>
           )}
         </div>
