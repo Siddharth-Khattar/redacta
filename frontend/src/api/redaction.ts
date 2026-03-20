@@ -51,6 +51,24 @@ export const THINKING_LEVELS: { id: ThinkingLevel; label: string }[] = [
   { id: "high", label: "High" },
 ];
 
+/** Supported thinking levels per model family */
+const MODEL_THINKING_SUPPORT: Record<string, ThinkingLevel[]> = {
+  "gemini-2.0-flash": [],
+  "gemini-3-flash-preview": ["minimal", "low", "medium", "high"],
+  "gemini-3.1-pro-preview": ["low", "medium", "high"],
+};
+
+/** Get the thinking levels supported by a model. Empty array means no thinking support. */
+export function getSupportedThinkingLevels(model: GeminiModel): ThinkingLevel[] {
+  return MODEL_THINKING_SUPPORT[model] ?? [];
+}
+
+/** Get the default thinking level for a model. */
+export function getDefaultThinkingLevel(model: GeminiModel): ThinkingLevel {
+  const supported = getSupportedThinkingLevels(model);
+  return supported.length > 0 ? supported[0]! : "low";
+}
+
 /** Convert a Uint8Array to a base64 string. */
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   // Process in chunks to avoid call stack overflow on large PDFs

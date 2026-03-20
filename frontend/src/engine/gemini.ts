@@ -68,6 +68,28 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Extract a human-readable message from a Gemini API error (which may contain nested JSON). */
+function extractGeminiErrorMessage(raw: string): string {
+  try {
+    // The SDK wraps errors as JSON with a nested "message" field that is itself JSON
+    const outer = JSON.parse(raw) as { error?: { message?: string } };
+    const innerStr = outer.error?.message;
+    if (innerStr) {
+      try {
+        const inner = JSON.parse(innerStr) as { error?: { message?: string } };
+        if (inner.error?.message) return inner.error.message;
+      } catch {
+        return innerStr;
+      }
+    }
+  } catch {
+    // Not JSON — try to find a readable substring
+    const match = raw.match(/"message"\s*:\s*"([^"]+)"/);
+    if (match?.[1]) return match[1];
+  }
+  return raw;
+}
+
 /**
  * Call Gemini to identify redaction targets, with exponential backoff on 429s.
  */
@@ -164,20 +186,25 @@ export async function identifyRedactions(
   // Classify the final error
   if (lastError instanceof RedactionEngineError) throw lastError;
 
-  const message = lastError instanceof Error ? lastError.message : String(lastError);
+  const rawMessage = lastError instanceof Error ? lastError.message : String(lastError);
+  const friendlyMessage = extractGeminiErrorMessage(rawMessage);
 
-  if (message.includes("429") || message.toLowerCase().includes("rate limit")) {
+  if (rawMessage.includes("429") || rawMessage.toLowerCase().includes("rate limit")) {
     throw new RedactionEngineError(
       "RATE_LIMIT",
       "The AI service is temporarily under high demand. Please try again in a few moments.",
     );
   }
 
-  if (message.includes("API key") || message.includes("401") || message.includes("403")) {
+  if (rawMessage.includes("API key") || rawMessage.includes("401") || rawMessage.includes("403")) {
     throw new RedactionEngineError("API_KEY_INVALID", "API key is invalid or expired.");
   }
 
-  throw new RedactionEngineError("NETWORK", `Failed to reach Gemini API: ${message}`);
+  if (rawMessage.includes("400")) {
+    throw new RedactionEngineError("PARSE", friendlyMessage);
+  }
+
+  throw new RedactionEngineError("NETWORK", friendlyMessage);
 }
 
 /** Lightweight call to validate an API key. */
