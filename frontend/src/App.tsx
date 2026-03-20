@@ -1,5 +1,5 @@
 // ABOUTME: Root application component with state-machine driven flow.
-// ABOUTME: Manages transitions between upload, workspace, processing, result, and error states.
+// ABOUTME: Manages transitions between API key gate, upload, workspace, processing, result, and error states.
 
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -10,6 +10,8 @@ import {
   redactPdf,
   type ThinkingLevel,
 } from "./api/redaction";
+import { ApiKeyGate } from "./components/ApiKeyGate";
+import { ApiKeyModal } from "./components/ApiKeyModal";
 import { DownloadBar } from "./components/DownloadBar";
 import { Header } from "./components/Header";
 import { PdfPanel } from "./components/PdfPanel";
@@ -19,6 +21,8 @@ import { RedactionWorkspace } from "./components/RedactionWorkspace";
 import { ResultPanel } from "./components/ResultPanel";
 import { ScanOverlay } from "./components/ScanOverlay";
 import { UploadZone } from "./components/UploadZone";
+import { RedactionEngineError } from "./engine/types";
+import { useApiKey } from "./hooks/useApiKey";
 
 type AppState = "upload" | "workspace" | "processing" | "result" | "error";
 type Theme = "dark" | "light";
@@ -30,12 +34,15 @@ function getInitialTheme(): Theme {
 }
 
 export default function App() {
+  const { apiKey, hasApiKey, setApiKey, clearApiKey } = useApiKey();
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [state, setState] = useState<AppState>("upload");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<RedactionResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const pdfPanelRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
@@ -60,26 +67,45 @@ export default function App() {
       model: GeminiModel,
       thinkingLevel: ThinkingLevel,
     ) => {
-      if (!file) return;
+      if (!file || !apiKey) return;
+
+      // Abort any previous request
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       setState("processing");
       setErrorMessage(null);
 
       try {
-        const response = await redactPdf(file, prompt, permanent, model, thinkingLevel);
+        const response = await redactPdf(apiKey, file, prompt, permanent, model, thinkingLevel);
+
+        // Check if aborted during processing
+        if (controller.signal.aborted) return;
+
         setResult(response);
         setState("result");
       } catch (error) {
+        if (controller.signal.aborted) return;
+        if (error instanceof DOMException && error.name === "AbortError") return;
+
+        // If API key is invalid, clear it and go back to gate
+        if (error instanceof RedactionEngineError && error.code === "API_KEY_INVALID") {
+          clearApiKey();
+          return;
+        }
+
         const message =
           error instanceof Error ? error.message : "An unexpected error occurred during redaction";
         setErrorMessage(message);
         setState("error");
       }
     },
-    [file],
+    [file, apiKey, clearApiKey],
   );
 
   const handleReset = useCallback(() => {
+    abortControllerRef.current?.abort();
     setFile(null);
     setResult(null);
     setErrorMessage(null);
@@ -97,6 +123,24 @@ export default function App() {
     setState("workspace");
   }, []);
 
+  const handleClearApiKey = useCallback(() => {
+    abortControllerRef.current?.abort();
+    clearApiKey();
+    setShowApiKeyModal(false);
+    setFile(null);
+    setResult(null);
+    setErrorMessage(null);
+    setState("upload");
+  }, [clearApiKey]);
+
+  const handleApiKeyChanged = useCallback(
+    (key: string) => {
+      setApiKey(key);
+      setShowApiKeyModal(false);
+    },
+    [setApiKey],
+  );
+
   const isPostUpload = state !== "upload" && file;
 
   return (
@@ -106,10 +150,25 @@ export default function App() {
         onReset={handleReset}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        apiKeySet={hasApiKey}
+        onApiKeyClick={() => setShowApiKeyModal(true)}
       />
 
       <AnimatePresence mode="wait">
-        {state === "upload" && (
+        {!hasApiKey && (
+          <motion.div
+            key="api-key-gate"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 flex flex-col"
+          >
+            <ApiKeyGate onKeyValidated={setApiKey} />
+          </motion.div>
+        )}
+
+        {hasApiKey && state === "upload" && (
           <motion.div
             key="upload"
             initial={{ opacity: 0 }}
@@ -122,7 +181,7 @@ export default function App() {
           </motion.div>
         )}
 
-        {isPostUpload && (
+        {hasApiKey && isPostUpload && (
           <motion.div
             key="workspace-area"
             initial={{ opacity: 0 }}
@@ -181,6 +240,15 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showApiKeyModal && apiKey && (
+        <ApiKeyModal
+          currentKeyHint={apiKey}
+          onKeyChanged={handleApiKeyChanged}
+          onKeyClear={handleClearApiKey}
+          onClose={() => setShowApiKeyModal(false)}
+        />
+      )}
     </div>
   );
 }

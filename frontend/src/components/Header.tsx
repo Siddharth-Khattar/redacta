@@ -1,16 +1,25 @@
 // ABOUTME: App header with branding, theme toggle, and reset button.
 // ABOUTME: Clean, minimal — dot accent + wordmark.
 
-import { Moon, RotateCcw, Sun } from "lucide-react";
+import { KeyRound, Moon, RotateCcw, Sun } from "lucide-react";
 
 interface HeaderProps {
   showReset: boolean;
   onReset: () => void;
   theme: "dark" | "light";
   onToggleTheme: () => void;
+  apiKeySet: boolean;
+  onApiKeyClick: () => void;
 }
 
-export function Header({ showReset, onReset, theme, onToggleTheme }: HeaderProps) {
+export function Header({
+  showReset,
+  onReset,
+  theme,
+  onToggleTheme,
+  apiKeySet,
+  onApiKeyClick,
+}: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 h-14 border-b border-border bg-bg/80 backdrop-blur-md z-20 relative">
       <div className="flex items-center gap-2.5">
@@ -19,6 +28,17 @@ export function Header({ showReset, onReset, theme, onToggleTheme }: HeaderProps
       </div>
 
       <div className="flex items-center gap-1">
+        {apiKeySet && (
+          <button
+            type="button"
+            onClick={onApiKeyClick}
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-text-dim hover:text-redact hover:bg-surface transition-colors"
+            aria-label="API key settings"
+            title="API key settings"
+          >
+            <KeyRound className="w-4 h-4" />
+          </button>
+        )}
         <button
           type="button"
           onClick={onToggleTheme}

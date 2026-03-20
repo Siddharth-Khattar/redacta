@@ -1,5 +1,8 @@
-// ABOUTME: API client for PDF redaction operations.
-// ABOUTME: Handles file upload, redaction submission, and response utilities.
+// ABOUTME: API client adapter for PDF redaction operations.
+// ABOUTME: Bridges the client-side engine with the existing UI contract (snake_case response shape).
+
+import { runRedactionPipeline } from "../engine/orchestrator";
+import { RedactionEngineError } from "../engine/types";
 
 export const RATE_LIMIT_ERROR_MESSAGE =
   "Our AI service is currently experiencing high demand. Please wait a moment and try again.";
@@ -31,10 +34,6 @@ export interface RedactionResponse {
   usage: UsageStats;
 }
 
-interface RedactionError {
-  detail: string;
-}
-
 export type GeminiModel = "gemini-2.0-flash" | "gemini-3-flash-preview" | "gemini-3.1-pro-preview";
 
 export type ThinkingLevel = "minimal" | "low" | "medium" | "high";
@@ -52,49 +51,71 @@ export const THINKING_LEVELS: { id: ThinkingLevel; label: string }[] = [
   { id: "high", label: "High" },
 ];
 
+/** Convert a Uint8Array to a base64 string. */
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  // Process in chunks to avoid call stack overflow on large PDFs
+  const chunkSize = 8192;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
 /**
  * Redact a PDF file using natural language instructions.
+ * Runs entirely client-side via the engine modules.
  */
 export async function redactPdf(
+  apiKey: string,
   file: File,
   prompt: string,
   permanent: boolean,
   model: GeminiModel = "gemini-2.0-flash",
   thinkingLevel: ThinkingLevel = "low",
 ): Promise<RedactionResponse> {
-  const formData = new FormData();
-  formData.append("file", file, file.name);
-  formData.append("prompt", prompt);
-  formData.append("permanent", String(permanent));
-  formData.append("model", model);
-  formData.append("thinking_level", thinkingLevel);
-
-  let response: Response;
   try {
-    response = await fetch("/api/redact/pdf", {
-      method: "POST",
-      body: formData,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Network error";
-    throw new Error(`Network error: ${message}. Is the backend running on port 8000?`);
-  }
+    const result = await runRedactionPipeline(
+      apiKey,
+      file,
+      prompt,
+      permanent,
+      model,
+      thinkingLevel,
+    );
 
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error(RATE_LIMIT_ERROR_MESSAGE);
+    return {
+      redacted_pdf: uint8ArrayToBase64(result.redactedPdf),
+      redaction_count: result.redactionCount,
+      targets: result.targets.map((t) => ({
+        text: t.text.length > 100 ? `${t.text.slice(0, 100)}...` : t.text,
+        page: t.page,
+        context: t.context && t.context.length > 100 ? `${t.context.slice(0, 100)}...` : t.context,
+      })),
+      reasoning: result.reasoning,
+      permanent: result.permanent,
+      usage: {
+        input_tokens: result.tokenUsage.inputTokens,
+        output_tokens: result.tokenUsage.outputTokens,
+        thinking_tokens: result.tokenUsage.thinkingTokens,
+        total_tokens: result.tokenUsage.totalTokens,
+        model: result.tokenUsage.model,
+        gemini_duration_ms: result.tokenUsage.durationMs,
+        total_duration_ms: result.totalDurationMs,
+        estimated_cost_usd: result.costEstimate.costUsd,
+        pricing_source: result.costEstimate.pricingSource,
+      },
+    };
+  } catch (error) {
+    if (error instanceof RedactionEngineError) {
+      if (error.code === "RATE_LIMIT") {
+        throw new Error(RATE_LIMIT_ERROR_MESSAGE);
+      }
+      throw error;
     }
-    let errorDetail: string;
-    try {
-      const errorData: RedactionError = await response.json();
-      errorDetail = errorData.detail;
-    } catch {
-      errorDetail = `Server returned ${response.status} ${response.statusText}`;
-    }
-    throw new Error(errorDetail);
+    throw error;
   }
-
-  return response.json();
 }
 
 /**
