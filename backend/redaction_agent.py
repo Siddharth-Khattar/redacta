@@ -147,7 +147,7 @@ Identify all text segments that match the redaction criteria. Return a JSON obje
             return RedactionResponse(**response_data)
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse Gemini response: {e}")
-            logger.error(f"Raw response: {full_response}")
+            logger.error(f"Raw response length: {len(full_response)} chars")
             return RedactionResponse(targets=[], reasoning=f"Failed to parse response: {str(e)}")
 
     def apply_redactions(
@@ -178,7 +178,7 @@ Identify all text segments that match the redaction criteria. Return a JSON obje
         for target in redaction_targets:
             page_idx = target.page - 1
             if page_idx < 0 or page_idx >= len(doc):
-                logger.warning(f"Page {target.page} out of range for target: {target.text[:50]}")
+                logger.warning(f"Page {target.page} out of range, skipping target")
                 continue
             if page_idx not in targets_by_page:
                 targets_by_page[page_idx] = []
@@ -191,7 +191,7 @@ Identify all text segments that match the redaction criteria. Return a JSON obje
                 for target in targets:
                     text_instances = page.search_for(target.text)
                     if not text_instances:
-                        logger.warning(f"Text not found on page {target.page}: {target.text[:50]}")
+                        logger.warning(f"Text not found on page {target.page}, skipping target")
                         continue
 
                     for rect in text_instances:
@@ -202,7 +202,7 @@ Identify all text segments that match the redaction criteria. Return a JSON obje
                 for target in targets:
                     text_instances = page.search_for(target.text)
                     if not text_instances:
-                        logger.warning(f"Text not found on page {target.page}: {target.text[:50]}")
+                        logger.warning(f"Text not found on page {target.page}, skipping target")
                         continue
 
                     for rect in text_instances:

@@ -87,7 +87,7 @@ async def redact_pdf(
             temp_input = tmp.name
 
         logger.info(f"Processing redaction for: {file.filename}")
-        logger.info(f"Prompt: {prompt}")
+        logger.info(f"Prompt length: {len(prompt)} chars")
         logger.info(f"File size: {len(content)} bytes")
 
         agent = PDFRedactionAgent(
