@@ -3,12 +3,22 @@
 
 import { Info } from "lucide-react";
 import { useState } from "react";
+import type { HighlightColor, ProcessingMode } from "../api/redaction";
 import {
   getDefaultThinkingLevel,
   getModelDefinition,
   getModelsForProvider,
 } from "../engine/providers/registry";
 import type { ProviderId, ThinkingLevel } from "../engine/providers/types";
+
+const HIGHLIGHT_COLORS: { value: HighlightColor; bg: string; ring: string }[] = [
+  { value: "white", bg: "bg-white", ring: "ring-white" },
+  { value: "blue", bg: "bg-blue-400", ring: "ring-blue-400" },
+  { value: "green", bg: "bg-green-400", ring: "ring-green-400" },
+  { value: "yellow", bg: "bg-yellow-300", ring: "ring-yellow-300" },
+  { value: "pink", bg: "bg-pink-400", ring: "ring-pink-400" },
+  { value: "purple", bg: "bg-purple-400", ring: "ring-purple-400" },
+];
 
 const PROVIDER_LABELS: Record<ProviderId, string> = {
   gemini: "Gemini",
@@ -33,10 +43,12 @@ interface PromptPanelProps {
   configuredProviders: ProviderId[];
   onSubmit: (
     prompt: string,
+    mode: ProcessingMode,
     permanent: boolean,
     providerId: ProviderId,
     modelId: string,
     thinkingLevel: string,
+    highlightColor: HighlightColor,
   ) => void;
 }
 
@@ -46,7 +58,9 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
   const initialModel = initialModels[0]!;
 
   const [prompt, setPrompt] = useState("");
+  const [mode, setMode] = useState<ProcessingMode>("redact");
   const [permanent, setPermanent] = useState(false);
+  const [highlightColor, setHighlightColor] = useState<HighlightColor>("white");
   const [selectedProvider, setSelectedProvider] = useState<ProviderId>(initialProvider);
   const [selectedModel, setSelectedModel] = useState(initialModel.id);
   const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(
@@ -78,7 +92,15 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
 
   const handleSubmit = () => {
     if (prompt.trim()) {
-      onSubmit(prompt.trim(), permanent, selectedProvider, selectedModel, thinkingLevel);
+      onSubmit(
+        prompt.trim(),
+        mode,
+        permanent,
+        selectedProvider,
+        selectedModel,
+        thinkingLevel,
+        highlightColor,
+      );
     }
   };
 
@@ -94,7 +116,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
         {/* Heading */}
         <div className="mb-5">
           <h3 className="text-xl font-semibold text-text mb-1 tracking-tight">
-            What should we redact?
+            {mode === "redact" ? "What should we redact?" : "What should we pseudonymise?"}
           </h3>
           <p className="text-sm text-text-dim">Describe the sensitive content in plain language</p>
         </div>
@@ -104,13 +126,52 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Redact all personal names, phone numbers, and email addresses..."
+          placeholder={
+            mode === "redact"
+              ? "Redact all personal names, phone numbers, and email addresses..."
+              : "Pseudonymise all personal names, phone numbers, and email addresses..."
+          }
           className="w-full h-28 px-4 py-3 rounded-xl border border-border bg-bg text-text text-sm placeholder:text-text-faint focus:outline-none focus:border-text-dim resize-none leading-relaxed transition-colors"
           autoFocus
         />
 
         {/* Settings */}
         <div className="mt-5 space-y-4">
+          {/* Mode toggle */}
+          <div>
+            <p className="text-xs font-medium text-text-dim mb-2">Mode</p>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => setMode("redact")}
+                className={`
+                  flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                  ${
+                    mode === "redact"
+                      ? "bg-redact-soft text-redact shadow-sm ring-1 ring-redact/20"
+                      : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
+                  }
+                `}
+              >
+                Redact
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("pseudonymise")}
+                className={`
+                  flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                  ${
+                    mode === "pseudonymise"
+                      ? "bg-pseudo-soft text-pseudo shadow-sm ring-1 ring-pseudo/20"
+                      : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
+                  }
+                `}
+              >
+                Pseudonymise
+              </button>
+            </div>
+          </div>
+
           {/* Provider */}
           <div>
             <p className="text-xs font-medium text-text-dim mb-2">Provider</p>
@@ -191,59 +252,87 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
             </div>
           </div>
 
-          {/* Permanent toggle */}
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 relative">
-                <p className="text-xs font-medium text-text-dim">Permanent removal</p>
+          {/* Permanent toggle — redact mode only */}
+          {mode === "redact" && (
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 relative">
+                  <p className="text-xs font-medium text-text-dim">Permanent removal</p>
+                  <button
+                    type="button"
+                    className="text-text-faint hover:text-text-dim transition-colors"
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                    onClick={() => setShowTooltip((v) => !v)}
+                    aria-label="More info about permanent removal"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                  {showTooltip && (
+                    <div className="absolute bottom-full left-0 mb-2 w-72 p-3.5 rounded-xl bg-surface border border-border shadow-2xl text-xs text-text-sub leading-relaxed z-20">
+                      <p className="mb-2">
+                        <strong className="text-text">Visual covering</strong> (default) draws black
+                        boxes over text. The underlying data stays in the PDF and could be
+                        recovered.
+                      </p>
+                      <p>
+                        <strong className="text-redact">Permanent removal</strong> deletes the text
+                        data entirely. Characters are destroyed, not hidden. This cannot be undone.
+                      </p>
+                    </div>
+                  )}
+                </div>
                 <button
                   type="button"
-                  className="text-text-faint hover:text-text-dim transition-colors"
-                  onMouseEnter={() => setShowTooltip(true)}
-                  onMouseLeave={() => setShowTooltip(false)}
-                  onClick={() => setShowTooltip((v) => !v)}
-                  aria-label="More info about permanent removal"
-                >
-                  <Info className="w-3.5 h-3.5" />
-                </button>
-                {showTooltip && (
-                  <div className="absolute bottom-full left-0 mb-2 w-72 p-3.5 rounded-xl bg-surface border border-border shadow-2xl text-xs text-text-sub leading-relaxed z-20">
-                    <p className="mb-2">
-                      <strong className="text-text">Visual covering</strong> (default) draws black
-                      boxes over text. The underlying data stays in the PDF and could be recovered.
-                    </p>
-                    <p>
-                      <strong className="text-redact">Permanent removal</strong> deletes the text
-                      data entirely. Characters are destroyed, not hidden. This cannot be undone.
-                    </p>
-                  </div>
-                )}
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={permanent}
-                onClick={() => setPermanent(!permanent)}
-                className={`
-                  relative w-10 h-5.5 rounded-full transition-colors duration-200
-                  ${permanent ? "bg-redact" : "bg-border"}
-                `}
-              >
-                <span
+                  role="switch"
+                  aria-checked={permanent}
+                  onClick={() => setPermanent(!permanent)}
                   className={`
-                    absolute top-0.75 left-0.75 w-4 h-4 rounded-full bg-white
-                    transition-transform duration-200 shadow-sm
-                    ${permanent ? "translate-x-4.5" : "translate-x-0"}
+                    relative w-10 h-5.5 rounded-full transition-colors duration-200
+                    ${permanent ? "bg-redact" : "bg-border"}
                   `}
-                />
-              </button>
+                >
+                  <span
+                    className={`
+                      absolute top-0.75 left-0.75 w-4 h-4 rounded-full bg-white
+                      transition-transform duration-200 shadow-sm
+                      ${permanent ? "translate-x-4.5" : "translate-x-0"}
+                    `}
+                  />
+                </button>
+              </div>
+              {permanent && (
+                <p className="text-xs text-redact/70 mt-1.5 leading-relaxed">
+                  Text beneath redactions will be permanently destroyed.
+                </p>
+              )}
             </div>
-            {permanent && (
-              <p className="text-xs text-redact/70 mt-1.5 leading-relaxed">
-                Text beneath redactions will be permanently destroyed.
-              </p>
-            )}
-          </div>
+          )}
+
+          {/* Highlight color picker — pseudonymise mode only */}
+          {mode === "pseudonymise" && (
+            <div>
+              <p className="text-xs font-medium text-text-dim mb-2">Highlight color</p>
+              <div className="flex items-center gap-2">
+                {HIGHLIGHT_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setHighlightColor(c.value)}
+                    aria-label={`Highlight color: ${c.value}`}
+                    className={`
+                      w-7 h-7 rounded-full ${c.bg} transition-all duration-150
+                      ${
+                        highlightColor === c.value
+                          ? `ring-2 ${c.ring} ring-offset-2 ring-offset-bg`
+                          : "hover:scale-110"
+                      }
+                    `}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Submit */}
@@ -255,12 +344,14 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
             mt-6 w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200
             ${
               prompt.trim()
-                ? "bg-redact hover:bg-redact-hover text-white cursor-pointer shadow-sm"
+                ? mode === "redact"
+                  ? "bg-redact hover:bg-redact-hover text-white cursor-pointer shadow-sm"
+                  : "bg-pseudo hover:bg-pseudo-hover text-white cursor-pointer shadow-sm"
                 : "bg-border text-text-faint cursor-not-allowed"
             }
           `}
         >
-          Redact Document
+          {mode === "redact" ? "Redact Document" : "Pseudonymise Document"}
         </button>
 
         <p className="text-center mt-3 text-xs text-text-faint">

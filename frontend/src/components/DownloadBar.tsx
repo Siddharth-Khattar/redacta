@@ -31,14 +31,24 @@ function Dot() {
 }
 
 export function DownloadBar({ result, originalFileName, onRedactAgain }: DownloadBarProps) {
+  const isPseudo = result.mode === "pseudonymise";
+
   const handleDownload = () => {
-    const outputName = originalFileName.replace(/\.pdf$/i, "_redacted.pdf");
+    const suffix = isPseudo ? "_pseudonymised.pdf" : "_redacted.pdf";
+    const outputName = originalFileName.replace(/\.pdf$/i, suffix);
     downloadFromBase64(result.redacted_pdf, outputName);
   };
 
   const uniquePages = new Set(result.targets.map((t: RedactionTarget) => t.page)).size;
   const { usage } = result;
   const cost = usage.estimated_cost_usd;
+  const statLabel = isPseudo
+    ? result.redaction_count === 1
+      ? "replacement"
+      : "replacements"
+    : result.redaction_count === 1
+      ? "redaction"
+      : "redactions";
 
   return (
     <div className="flex-none border-t border-border px-6 py-3 bg-raised">
@@ -46,8 +56,7 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
         {/* Stats */}
         <div className="text-sm text-text-sub flex items-center gap-3 flex-wrap">
           <span>
-            <span className="font-semibold text-text">{result.redaction_count}</span>{" "}
-            {result.redaction_count === 1 ? "redaction" : "redactions"}
+            <span className="font-semibold text-text">{result.redaction_count}</span> {statLabel}
           </span>
           {uniquePages > 0 && (
             <>
@@ -107,7 +116,9 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
           <button
             type="button"
             onClick={handleDownload}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-redact hover:bg-redact-hover text-white text-sm font-medium transition-colors shadow-sm"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors shadow-sm ${
+              isPseudo ? "bg-pseudo hover:bg-pseudo-hover" : "bg-redact hover:bg-redact-hover"
+            }`}
           >
             <ArrowDownToLine className="w-3.5 h-3.5" />
             Download PDF

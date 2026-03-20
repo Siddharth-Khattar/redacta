@@ -21,6 +21,11 @@
   --color-redact-soft: rgba(217, 83, 79, 0.1);
   --color-redact-glow: rgba(217, 83, 79, 0.2);
 
+  /* Pseudonymisation accent — soft blue */
+  --color-pseudo: #5b8def;
+  --color-pseudo-hover: #6d9bf5;
+  --color-pseudo-soft: rgba(91, 141, 239, 0.1);
+
   /* Success */
   --color-done: #6aad7a;
   --color-done-soft: rgba(106, 173, 122, 0.1);
@@ -53,6 +58,10 @@ html.light {
   --color-redact-hover: #b53a36;
   --color-redact-soft: rgba(201, 67, 63, 0.08);
   --color-redact-glow: rgba(201, 67, 63, 0.12);
+
+  --color-pseudo: #4a7de0;
+  --color-pseudo-hover: #3d6fd1;
+  --color-pseudo-soft: rgba(74, 125, 224, 0.08);
 
   --color-done: #3d8a4f;
   --color-done-soft: rgba(61, 138, 79, 0.08);

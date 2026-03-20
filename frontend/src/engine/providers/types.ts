@@ -1,7 +1,7 @@
 // ABOUTME: Provider abstraction types for multi-LLM support.
 // ABOUTME: Defines ProviderId, ModelDefinition, ProviderConfig, and the RedactionProvider interface.
 
-import type { RedactionResult, TokenUsage } from "../types";
+import type { ProcessingMode, RedactionResult, TokenUsage } from "../types";
 
 export type ProviderId = "gemini" | "openai";
 
@@ -26,12 +26,13 @@ export interface ProviderConfig {
 }
 
 export interface RedactionProvider {
-  identifyRedactions(
+  identifyTargets(
     apiKey: string,
     model: string,
     pdfText: Map<number, string>,
     redactionPrompt: string,
     thinkingLevel: string,
+    mode: ProcessingMode,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }>;
 
   validateApiKey(apiKey: string): Promise<boolean>;

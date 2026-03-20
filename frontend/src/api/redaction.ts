@@ -2,8 +2,11 @@
 // ABOUTME: Bridges the client-side engine with the existing UI contract (snake_case response shape).
 
 import { runRedactionPipeline } from "../engine/orchestrator";
+import { applyPseudonymisation } from "../engine/pdf";
 import type { ProviderId } from "../engine/providers/types";
-import { RedactionEngineError } from "../engine/types";
+import { type HighlightColor, type ProcessingMode, RedactionEngineError } from "../engine/types";
+
+export type { HighlightColor, ProcessingMode };
 
 export const RATE_LIMIT_ERROR_MESSAGE =
   "Our AI service is currently experiencing high demand. Please wait a moment and try again.";
@@ -12,6 +15,7 @@ export interface RedactionTarget {
   text: string;
   page: number;
   context: string | null;
+  pseudonym?: string;
 }
 
 export interface UsageStats {
@@ -32,6 +36,9 @@ export interface RedactionResponse {
   targets: RedactionTarget[];
   reasoning: string | null;
   permanent: boolean;
+  mode: ProcessingMode;
+  highlightColor: HighlightColor;
+  mapping: Record<string, string> | null;
   usage: UsageStats;
 }
 
@@ -59,6 +66,8 @@ export async function redactPdf(
   providerId: ProviderId,
   modelId: string,
   thinkingLevel: string,
+  mode: ProcessingMode = "redact",
+  highlightColor: HighlightColor = "white",
 ): Promise<RedactionResponse> {
   try {
     const result = await runRedactionPipeline(
@@ -69,18 +78,24 @@ export async function redactPdf(
       providerId,
       modelId,
       thinkingLevel,
+      mode,
+      highlightColor,
     );
 
     return {
       redacted_pdf: uint8ArrayToBase64(result.redactedPdf),
       redaction_count: result.redactionCount,
       targets: result.targets.map((t) => ({
-        text: t.text.length > 100 ? `${t.text.slice(0, 100)}...` : t.text,
+        text: t.text,
         page: t.page,
-        context: t.context && t.context.length > 100 ? `${t.context.slice(0, 100)}...` : t.context,
+        context: t.context,
+        pseudonym: t.pseudonym,
       })),
       reasoning: result.reasoning,
       permanent: result.permanent,
+      mode: result.mode,
+      highlightColor,
+      mapping: result.mapping,
       usage: {
         input_tokens: result.tokenUsage.inputTokens,
         output_tokens: result.tokenUsage.outputTokens,
@@ -145,4 +160,18 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Re-apply pseudonymisation with a different highlight color.
+ * Reuses cached targets so no LLM call is needed.
+ */
+export async function reapplyHighlightColor(
+  file: File,
+  targets: RedactionTarget[],
+  highlightColor: HighlightColor,
+): Promise<string> {
+  const pdfBytes = await file.arrayBuffer();
+  const redactedPdf = await applyPseudonymisation(pdfBytes, targets, highlightColor);
+  return uint8ArrayToBase64(redactedPdf);
 }

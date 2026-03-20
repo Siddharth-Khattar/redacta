@@ -1,8 +1,14 @@
 // ABOUTME: OpenAI provider using raw fetch to the chat completions API.
 // ABOUTME: Supports GPT-5.4 family with reasoning.effort for thinking levels.
 
-import { RedactionEngineError, type RedactionResult, type TokenUsage } from "../types";
-import { buildUserMessage, DEFAULT_RETRY_CONFIG, SYSTEM_INSTRUCTION, withRetry } from "./shared";
+import { buildUserMessage, getSystemInstruction } from "../prompts";
+import {
+  type ProcessingMode,
+  RedactionEngineError,
+  type RedactionResult,
+  type TokenUsage,
+} from "../types";
+import { DEFAULT_RETRY_CONFIG, withRetry } from "./shared";
 import type { RedactionProvider } from "./types";
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
@@ -64,14 +70,15 @@ function classifyError(error: unknown): never {
 }
 
 export class OpenAIProvider implements RedactionProvider {
-  async identifyRedactions(
+  async identifyTargets(
     apiKey: string,
     model: string,
     pdfText: Map<number, string>,
     redactionPrompt: string,
     thinkingLevel: string,
+    mode: ProcessingMode,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }> {
-    const userMessage = buildUserMessage(pdfText, redactionPrompt);
+    const userMessage = buildUserMessage(mode, pdfText, redactionPrompt);
     const effort = REASONING_EFFORT_MAP[thinkingLevel] ?? "low";
 
     try {
@@ -82,7 +89,7 @@ export class OpenAIProvider implements RedactionProvider {
           const body: Record<string, unknown> = {
             model,
             messages: [
-              { role: "system", content: SYSTEM_INSTRUCTION },
+              { role: "system", content: getSystemInstruction(mode) },
               { role: "user", content: userMessage },
             ],
             response_format: { type: "json_object" },

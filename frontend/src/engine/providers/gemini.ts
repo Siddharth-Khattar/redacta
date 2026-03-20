@@ -2,8 +2,14 @@
 // ABOUTME: Handles both thinkingBudget (2.5) and thinkingLevel (3.x) configurations.
 
 import { ThinkingLevel as GeminiThinkingLevel, GoogleGenAI } from "@google/genai";
-import { RedactionEngineError, type RedactionResult, type TokenUsage } from "../types";
-import { buildUserMessage, DEFAULT_RETRY_CONFIG, SYSTEM_INSTRUCTION, withRetry } from "./shared";
+import { buildUserMessage, getSystemInstruction } from "../prompts";
+import {
+  type ProcessingMode,
+  RedactionEngineError,
+  type RedactionResult,
+  type TokenUsage,
+} from "../types";
+import { DEFAULT_RETRY_CONFIG, withRetry } from "./shared";
 import type { RedactionProvider } from "./types";
 
 /** Token budget mapping for Gemini 2.5 models (thinkingBudget param) */
@@ -73,15 +79,16 @@ function classifyError(error: unknown): never {
 }
 
 export class GeminiProvider implements RedactionProvider {
-  async identifyRedactions(
+  async identifyTargets(
     apiKey: string,
     model: string,
     pdfText: Map<number, string>,
     redactionPrompt: string,
     thinkingLevel: string,
+    mode: ProcessingMode,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }> {
     const ai = new GoogleGenAI({ apiKey });
-    const userMessage = buildUserMessage(pdfText, redactionPrompt);
+    const userMessage = buildUserMessage(mode, pdfText, redactionPrompt);
 
     // Gemini 2.5 uses thinkingBudget (integer); 3.x uses thinkingLevel (enum)
     const is25 = model.startsWith("gemini-2");
@@ -103,7 +110,7 @@ export class GeminiProvider implements RedactionProvider {
             model,
             contents: userMessage,
             config: {
-              systemInstruction: SYSTEM_INSTRUCTION,
+              systemInstruction: getSystemInstruction(mode),
               responseMimeType: "application/json",
               thinkingConfig,
             },

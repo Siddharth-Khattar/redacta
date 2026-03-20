@@ -1,14 +1,19 @@
 // ABOUTME: Engine-internal types and error class for the client-side redaction pipeline.
 // ABOUTME: Shared across pdf, providers, pricing, and orchestrator modules.
 
+export type ProcessingMode = "redact" | "pseudonymise";
+export type HighlightColor = "white" | "blue" | "green" | "yellow" | "pink" | "purple";
+
 export interface RedactionTarget {
   text: string;
   page: number;
   context: string | null;
+  pseudonym?: string;
 }
 
 export interface RedactionResult {
   targets: RedactionTarget[];
+  mapping?: Record<string, string>;
   reasoning: string | null;
 }
 
@@ -38,6 +43,8 @@ export interface RedactionPipelineResult {
   targets: RedactionTarget[];
   reasoning: string | null;
   permanent: boolean;
+  mode: ProcessingMode;
+  mapping: Record<string, string> | null;
   tokenUsage: TokenUsage;
   costEstimate: CostEstimate;
   totalDurationMs: number;

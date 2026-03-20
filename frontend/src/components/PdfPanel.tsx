@@ -23,14 +23,14 @@ export function PdfPanel({ file, label }: PdfPanelProps) {
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      <div className="flex items-center gap-2.5 px-4 py-2 bg-bg border-b border-border">
+      <iframe src={`${blobUrl}#toolbar=0`} className="flex-1 w-full bg-bg" title={label} />
+      <div className="flex items-center gap-2.5 px-4 h-11 bg-bg border-t border-border">
         <FileText className="w-3.5 h-3.5 text-text-dim" />
         <span className="text-xs text-text-sub truncate">{label}</span>
         <span className="text-xs text-text-faint ml-auto font-mono shrink-0">
           {formatFileSize(file.size)}
         </span>
       </div>
-      <iframe src={blobUrl} className="flex-1 w-full bg-bg" title={label} />
     </div>
   );
 }

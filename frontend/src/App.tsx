@@ -3,7 +3,14 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RATE_LIMIT_ERROR_MESSAGE, type RedactionResponse, redactPdf } from "./api/redaction";
+import {
+  type HighlightColor,
+  type ProcessingMode,
+  RATE_LIMIT_ERROR_MESSAGE,
+  type RedactionResponse,
+  reapplyHighlightColor,
+  redactPdf,
+} from "./api/redaction";
 import { ApiKeyGate } from "./components/ApiKeyGate";
 import { ApiKeyModal } from "./components/ApiKeyModal";
 import { DownloadBar } from "./components/DownloadBar";
@@ -33,6 +40,7 @@ export default function App() {
   const [gatePassed, setGatePassed] = useState(hasAnyKey);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [state, setState] = useState<AppState>("upload");
+  const [lastMode, setLastMode] = useState<ProcessingMode>("redact");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<RedactionResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,10 +80,12 @@ export default function App() {
   const handleSubmit = useCallback(
     async (
       prompt: string,
+      mode: ProcessingMode,
       permanent: boolean,
       providerId: ProviderId,
       modelId: string,
       thinkingLevel: string,
+      highlightColor: HighlightColor,
     ) => {
       const apiKey = keys[providerId];
       if (!file || !apiKey) return;
@@ -85,6 +95,7 @@ export default function App() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
+      setLastMode(mode);
       setState("processing");
       setErrorMessage(null);
 
@@ -97,6 +108,8 @@ export default function App() {
           providerId,
           modelId,
           thinkingLevel,
+          mode,
+          highlightColor,
         );
 
         // Check if aborted during processing
@@ -141,6 +154,15 @@ export default function App() {
     setErrorMessage(null);
     setState("workspace");
   }, []);
+
+  const handleHighlightColorChange = useCallback(
+    async (color: HighlightColor) => {
+      if (!file || !result || result.mode !== "pseudonymise") return;
+      const newPdf = await reapplyHighlightColor(file, result.targets, color);
+      setResult((prev) => (prev ? { ...prev, redacted_pdf: newPdf, highlightColor: color } : prev));
+    },
+    [file, result],
+  );
 
   const handleKeyChanged = useCallback(
     (provider: ProviderId, key: string) => {
@@ -217,13 +239,24 @@ export default function App() {
                       onSubmit={handleSubmit}
                     />
                   )}
-                  {state === "processing" && <ProcessingPanel />}
-                  {state === "result" && result && <ResultPanel result={result} />}
+                  {state === "processing" && <ProcessingPanel mode={lastMode} />}
+                  {state === "result" && result && (
+                    <ResultPanel
+                      result={result}
+                      onHighlightColorChange={handleHighlightColorChange}
+                    />
+                  )}
                   {state === "error" && (
                     <div className="flex-1 flex items-center justify-center p-8">
                       <div className="text-center max-w-sm">
-                        <div className="w-3 h-3 rounded-full bg-redact mx-auto mb-5" />
-                        <h3 className="text-lg font-semibold text-text mb-2">Redaction failed</h3>
+                        <div
+                          className={`w-3 h-3 rounded-full mx-auto mb-5 ${lastMode === "pseudonymise" ? "bg-pseudo" : "bg-redact"}`}
+                        />
+                        <h3 className="text-lg font-semibold text-text mb-2">
+                          {lastMode === "pseudonymise"
+                            ? "Pseudonymisation failed"
+                            : "Redaction failed"}
+                        </h3>
                         <p className="text-sm text-text-sub mb-2 leading-relaxed">{errorMessage}</p>
                         {errorMessage === RATE_LIMIT_ERROR_MESSAGE && (
                           <p className="text-xs text-text-dim mb-6">
@@ -234,7 +267,11 @@ export default function App() {
                         <button
                           type="button"
                           onClick={handleRetry}
-                          className="px-5 py-2.5 rounded-lg bg-redact hover:bg-redact-hover text-white text-sm font-medium transition-colors"
+                          className={`px-5 py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
+                            lastMode === "pseudonymise"
+                              ? "bg-pseudo hover:bg-pseudo-hover"
+                              : "bg-redact hover:bg-redact-hover"
+                          }`}
                         >
                           Try again
                         </button>
