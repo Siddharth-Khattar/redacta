@@ -52,9 +52,9 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
 
   return (
     <div className="flex-none border-t border-border px-6 py-3 bg-raised">
-      <div className="flex items-center justify-between">
-        {/* Stats */}
-        <div className="text-sm text-text-sub flex items-center gap-3 flex-wrap">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
+        {/* Left: Pages */}
+        <div className="text-sm text-text-sub flex items-center gap-3">
           <span>
             <span className="font-semibold text-text">{result.redaction_count}</span> {statLabel}
           </span>
@@ -67,7 +67,10 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
               </span>
             </>
           )}
-          <Dot />
+        </div>
+
+        {/* Center: Token stats */}
+        <div className="text-sm text-text-sub flex items-center justify-center gap-3">
           <span className="font-mono text-xs text-text-dim" title="Total processing time">
             {formatDuration(usage.total_duration_ms)}
           </span>
@@ -103,7 +106,7 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
           )}
         </div>
 
-        {/* Actions */}
+        {/* Right: Actions */}
         <div className="flex items-center gap-2">
           <button
             type="button"
