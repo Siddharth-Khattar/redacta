@@ -74,18 +74,15 @@ When fixing errors, find and fix the ROOT CAUSE - not symptoms. Apply No tempora
 ## Verification
 
 After applying any and all changes:
-0. Check the respective directory's package.json or whatever file is used for python backends to understand what commands are available.
-1. For Python: activate `.venv` via `cd backend && source .venv/bin/activate` if you are in the root folder, otherwise go to the root and then do it. Essentially .venv should be activated in `backend/`
+1. Check the respective directory's package.json or whatever file is used for python backends to understand what commands are available.
 2. Run type checks per stack:
    - **Frontend:** `bunx tsc --noEmit` (or `npm run typecheck`)
-   - **Backend:** `cd backend && npx pyright .`
 3. Lint & format:
    - Run `make format` from project root
 4. Build:
    - Run the relevant build command for the stack you changed
 5. Final lint sweep — confirm zero remaining issues:
    - **Frontend:** `bunx biome check .` (from `frontend/`)
-   - **Backend:** `ruff check .` (from `backend/`)
 6. Iteratively fix until all errors are resolved
 7. Ask yourself: "Would a staff engineer approve this?" - If not, iterate over the solution till its perfect
 8. Never mark a task complete without proving it works
