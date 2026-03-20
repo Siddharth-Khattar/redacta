@@ -28,14 +28,24 @@ Your documents never leave your device.
 
 ## How It Works
 
-```
-Upload PDF → Describe what to redact → AI identifies targets → Download redacted PDF
+```mermaid
+flowchart LR
+    A["Upload PDF"] --> B["Describe what\nto redact"]
+    B --> C["Gemini identifies\ntargets"]
+    C --> D["MuPDF applies\nredactions"]
+    D --> E["Download\nredacted PDF"]
+
+    style A fill:#1c1c20,stroke:#d9534f,color:#e2dfd8
+    style B fill:#1c1c20,stroke:#d9534f,color:#e2dfd8
+    style C fill:#1c1c20,stroke:#d9534f,color:#e2dfd8
+    style D fill:#1c1c20,stroke:#d9534f,color:#e2dfd8
+    style E fill:#d9534f,stroke:#d9534f,color:#fff
 ```
 
 1. **Upload** a PDF via drag-and-drop or file picker
 2. **Describe** what to redact in plain language (e.g. *"all personal names and phone numbers"*)
 3. **Gemini** analyzes every page and identifies exact text matches
-4. **MuPDF** applies black-box redactions — visual overlays or permanent text destruction
+4. **MuPDF** applies black-box redactions: visual overlays or permanent text destruction
 5. **Download** the redacted document
 
 Everything happens client-side. The PDF is processed by MuPDF compiled to WebAssembly, and Gemini is called directly from your browser using your own API key. No backend. No server. No data leaves your machine.
@@ -44,14 +54,14 @@ Everything happens client-side. The PDF is processed by MuPDF compiled to WebAss
 
 ## Features
 
-- **Natural language redaction** — describe what to censor, not where it is
-- **Visual or permanent** — black-box overlays (reversible) or full text destruction (irreversible)
-- **Three Gemini models** — 2.0 Flash (fast), 3.0 Flash (balanced), 3.1 Pro (most capable)
-- **Configurable thinking depth** — minimal to high reasoning for complex documents
-- **Live cost estimation** — token counts and USD cost displayed after each run
-- **Split-pane workspace** — original and redacted PDFs side by side, resizable
-- **Dark & light themes** — respects system preference, toggleable
-- **Fully private** — your API key stays in localStorage, documents stay in memory
+- **Natural language redaction** : describe what to censor, not where it is
+- **Visual or permanent** : black-box overlays (reversible) or full text destruction (irreversible)
+- **Three Gemini models** : 2.0 Flash (fast), 3.0 Flash (balanced), 3.1 Pro (most capable)
+- **Configurable thinking depth** : minimal to high reasoning for complex documents
+- **Live cost estimation** : token counts and USD cost displayed after each run
+- **Split-pane workspace** : original and redacted PDFs side by side, resizable
+- **Dark & light themes** : respects system preference, toggleable
+- **Fully private** : your API key stays in localStorage, documents stay in memory
 
 ---
 
@@ -72,7 +82,7 @@ make setup
 make dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) — enter your API key when prompted.
+Open [http://localhost:5173](http://localhost:5173). Enter your API key when prompted.
 
 ### Production build
 
@@ -85,14 +95,31 @@ make preview        # Build + serve locally
 
 ## Architecture
 
-```
-Browser
-├── React 19 + Vite 6              UI layer
-├── Engine
-│   ├── MuPDF WASM                  PDF text extraction + redaction
-│   ├── @google/genai SDK           Gemini streaming + retry
-│   └── Pricing module              OpenRouter live rates + fallback
-└── Cloudflare Workers              Static hosting (no server logic)
+```mermaid
+graph TD
+    subgraph Browser["Browser (client-side only)"]
+        UI["React 19 + Vite 6"]
+        subgraph Engine
+            PDF["MuPDF WASM\nText extraction + redaction"]
+            GEM["@google/genai SDK\nStreaming + retry"]
+            PRC["Pricing module\nOpenRouter + fallback"]
+        end
+        UI --> Engine
+    end
+
+    GEM -->|"HTTPS"| GEMAPI["Gemini API"]
+    PRC -->|"HTTPS"| ORAPI["OpenRouter API"]
+    Browser -->|"Static files"| CF["Cloudflare Workers"]
+
+    style Browser fill:#1c1c20,stroke:#30303a,color:#e2dfd8
+    style Engine fill:#222228,stroke:#30303a,color:#e2dfd8
+    style UI fill:#222228,stroke:#30303a,color:#e2dfd8
+    style PDF fill:#222228,stroke:#d9534f,color:#e2dfd8
+    style GEM fill:#222228,stroke:#4285f4,color:#e2dfd8
+    style PRC fill:#222228,stroke:#30303a,color:#e2dfd8
+    style GEMAPI fill:#4285f4,stroke:#4285f4,color:#fff
+    style ORAPI fill:#30303a,stroke:#30303a,color:#e2dfd8
+    style CF fill:#f38020,stroke:#f38020,color:#fff
 ```
 
 The entire application compiles to static files. Cloudflare Workers serves them with proper WASM headers and SPA routing. There is no server-side code.
@@ -103,7 +130,7 @@ The entire application compiles to static files. Cloudflare Workers serves them 
 
 | Model | Thinking Levels | Best For |
 |---|---|---|
-| Gemini 2.0 Flash | — | Fast, cost-effective redaction |
+| Gemini 2.0 Flash | None | Fast, cost-effective redaction |
 | Gemini 3.0 Flash | Minimal · Low · Medium · High | Balanced speed and accuracy |
 | Gemini 3.1 Pro | Low · Medium · High | Complex documents, highest accuracy |
 
@@ -112,7 +139,7 @@ The entire application compiles to static files. Cloudflare Workers serves them 
 
 | Model | Input | Output | Thinking |
 |---|---|---|---|
-| 2.0 Flash | $0.10 | $0.40 | — |
+| 2.0 Flash | $0.10 | $0.40 | N/A |
 | 3.0 Flash | $0.50 | $3.00 | $3.00 |
 | 3.1 Pro | $2.00 | $12.00 | $12.00 |
 
@@ -130,7 +157,7 @@ Prices fetched live from [OpenRouter](https://openrouter.ai) with a 6-hour cache
 | **API key** | Stored in `localStorage`. Sent only to `generativelanguage.googleapis.com`. |
 | **Redacted output** | Exists only in browser memory until downloaded. |
 | **Analytics / tracking** | None. Zero telemetry. |
-| **CSP** | Strict Content-Security-Policy headers — only allows Gemini API and OpenRouter. |
+| **CSP** | Strict Content-Security-Policy headers. Only allows Gemini API and OpenRouter. |
 
 ---
 
@@ -178,11 +205,11 @@ frontend/
 │   │   ├── pdf.ts             MuPDF WASM: extract text, apply redactions
 │   │   ├── gemini.ts          Gemini streaming client + retry logic
 │   │   ├── pricing.ts         OpenRouter pricing fetch + cache
-│   │   └── orchestrator.ts    Pipeline: extract → identify → redact → cost
+│   │   └── orchestrator.ts    Pipeline: extract > identify > redact > cost
 │   ├── hooks/
 │   │   └── useApiKey.ts       localStorage-backed API key hook
 │   ├── api/
-│   │   └── redaction.ts       Adapter: engine → UI contract (snake_case)
+│   │   └── redaction.ts       Adapter: engine to UI contract (snake_case)
 │   ├── components/            React UI components
 │   ├── App.tsx                Root state machine
 │   ├── index.css              Tailwind theme (dark + light)
@@ -200,15 +227,18 @@ Makefile                       Dev workflow commands
 
 Redacta deploys as a static site on Cloudflare Workers. Push to `main` triggers automatic deployment.
 
-```jsonc
-// wrangler.jsonc
-{
-  "name": "redacta",
-  "assets": {
-    "directory": "./frontend/dist",
-    "not_found_handling": "single-page-application"
-  }
-}
+```mermaid
+flowchart LR
+    A["git push main"] --> B["Cloudflare Build"]
+    B --> C["bun install\n+ bun run build"]
+    C --> D["wrangler deploy"]
+    D --> E["redacta.khattar.dev"]
+
+    style A fill:#1c1c20,stroke:#30303a,color:#e2dfd8
+    style B fill:#f38020,stroke:#f38020,color:#fff
+    style C fill:#1c1c20,stroke:#30303a,color:#e2dfd8
+    style D fill:#f38020,stroke:#f38020,color:#fff
+    style E fill:#d9534f,stroke:#d9534f,color:#fff
 ```
 
 ### Cloudflare build settings
@@ -222,4 +252,4 @@ Redacta deploys as a static site on Cloudflare Workers. Push to `main` triggers 
 
 ## License
 
-[MIT](LICENSE) — Siddharth Khattar, 2026
+[MIT](LICENSE) · Siddharth Khattar, 2026
