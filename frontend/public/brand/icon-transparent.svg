@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Icon with no background — for overlays and compositing -->
+  <g fill="#e2dfd8">
+    <rect x="100" y="112" width="56" height="288" rx="6"/>
+    <rect x="100" y="112" width="100" height="52" rx="6"/>
+    <rect x="100" y="348" width="100" height="52" rx="6"/>
+    <rect x="356" y="112" width="56" height="288" rx="6"/>
+    <rect x="312" y="112" width="100" height="52" rx="6"/>
+    <rect x="312" y="348" width="100" height="52" rx="6"/>
+  </g>
+  <rect x="172" y="228" width="168" height="56" rx="8" fill="#d9534f"/>
+</svg>

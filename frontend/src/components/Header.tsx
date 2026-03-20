@@ -1,7 +1,8 @@
 // ABOUTME: App header with branding, theme toggle, and reset button.
-// ABOUTME: Clean, minimal — dot accent + wordmark.
+// ABOUTME: Clean, minimal — bracket logo + wordmark.
 
 import { KeyRound, Moon, RotateCcw, Sun } from "lucide-react";
+import { RedactaLogo } from "./RedactaLogo";
 
 interface HeaderProps {
   showReset: boolean;
@@ -22,8 +23,8 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 h-14 border-b border-border bg-bg/80 backdrop-blur-md z-20 relative">
-      <div className="flex items-center gap-2.5">
-        <div className="w-2.5 h-2.5 rounded-full bg-redact" />
+      <div className="flex items-center gap-2">
+        <RedactaLogo size={22} className="text-text" />
         <span className="text-base font-semibold text-text tracking-tight">Redacta</span>
       </div>
 

@@ -59,9 +59,7 @@ export function PromptPanel({ onSubmit }: PromptPanelProps) {
           <h3 className="text-xl font-semibold text-text mb-1 tracking-tight">
             What should we redact?
           </h3>
-          <p className="text-sm text-text-dim">
-            Describe the sensitive content in plain language
-          </p>
+          <p className="text-sm text-text-dim">Describe the sensitive content in plain language</p>
         </div>
 
         {/* Prompt */}
@@ -105,17 +103,13 @@ export function PromptPanel({ onSubmit }: PromptPanelProps) {
             <div className="flex items-center gap-2 mb-2">
               <p className="text-xs font-medium text-text-dim">Thinking</p>
               {!supportsThinking && (
-                <span className="text-[11px] text-text-faint">
-                  — not available for 2.x
-                </span>
+                <span className="text-[11px] text-text-faint">— not available for 2.x</span>
               )}
             </div>
             <div
               className={`flex gap-1.5 ${!supportsThinking ? "opacity-35 pointer-events-none" : ""}`}
             >
-              {THINKING_LEVELS.filter((t) =>
-                supportedLevels.includes(t.id),
-              ).map((t) => (
+              {THINKING_LEVELS.filter((t) => supportedLevels.includes(t.id)).map((t) => (
                 <button
                   key={t.id}
                   type="button"
@@ -140,9 +134,7 @@ export function PromptPanel({ onSubmit }: PromptPanelProps) {
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 relative">
-                <p className="text-xs font-medium text-text-dim">
-                  Permanent removal
-                </p>
+                <p className="text-xs font-medium text-text-dim">Permanent removal</p>
                 <button
                   type="button"
                   className="text-text-faint hover:text-text-dim transition-colors"
@@ -156,14 +148,12 @@ export function PromptPanel({ onSubmit }: PromptPanelProps) {
                 {showTooltip && (
                   <div className="absolute bottom-full left-0 mb-2 w-72 p-3.5 rounded-xl bg-surface border border-border shadow-2xl text-xs text-text-sub leading-relaxed z-20">
                     <p className="mb-2">
-                      <strong className="text-text">Visual covering</strong>{" "}
-                      (default) draws black boxes over text. The underlying data
-                      stays in the PDF and could be recovered.
+                      <strong className="text-text">Visual covering</strong> (default) draws black
+                      boxes over text. The underlying data stays in the PDF and could be recovered.
                     </p>
                     <p>
-                      <strong className="text-redact">Permanent removal</strong>{" "}
-                      deletes the text data entirely. Characters are destroyed,
-                      not hidden. This cannot be undone.
+                      <strong className="text-redact">Permanent removal</strong> deletes the text
+                      data entirely. Characters are destroyed, not hidden. This cannot be undone.
                     </p>
                   </div>
                 )}

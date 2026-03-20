@@ -1,9 +1,10 @@
 // ABOUTME: Full-screen gate component that prompts users to enter their Gemini API key.
 // ABOUTME: Validates the key via a lightweight API call before saving to localStorage.
 
-import { KeyRound, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { validateApiKey } from "../engine/gemini";
+import { RedactaLogo } from "./RedactaLogo";
 
 interface ApiKeyGateProps {
   onKeyValidated: (key: string) => void;
@@ -39,8 +40,8 @@ export function ApiKeyGate({ onKeyValidated }: ApiKeyGateProps) {
     <div className="flex-1 flex items-center justify-center p-8">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-redact/10 flex items-center justify-center mb-4">
-            <KeyRound className="w-6 h-6 text-redact" />
+          <div className="mb-4">
+            <RedactaLogo size={48} className="text-text" />
           </div>
           <h2 className="text-xl font-semibold text-text mb-2">Connect your Gemini API key</h2>
           <p className="text-sm text-text-sub text-center leading-relaxed">

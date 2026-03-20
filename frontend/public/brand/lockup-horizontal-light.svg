@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 56">
+  <!-- Horizontal lockup: icon + wordmark, for light backgrounds -->
+
+  <!-- Icon scaled to 48x48, centered vertically -->
+  <g transform="translate(0, 4)">
+    <rect width="48" height="48" rx="9" fill="#f7f6f3"/>
+    <g fill="#1c1b19">
+      <rect x="9.4" y="10.5" width="5.3" height="27" rx="1"/>
+      <rect x="9.4" y="10.5" width="9.4" height="4.9" rx="1"/>
+      <rect x="9.4" y="32.6" width="9.4" height="4.9" rx="1"/>
+      <rect x="33.4" y="10.5" width="5.3" height="27" rx="1"/>
+      <rect x="29.3" y="10.5" width="9.4" height="4.9" rx="1"/>
+      <rect x="29.3" y="32.6" width="9.4" height="4.9" rx="1"/>
+    </g>
+    <rect x="16.1" y="21.4" width="15.8" height="5.3" rx="1.5" fill="#c9433f"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="62" y="38" font-family="'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="600" fill="#1c1b19" letter-spacing="-0.5">Redacta</text>
+</svg>
