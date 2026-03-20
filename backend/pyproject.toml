@@ -12,6 +12,7 @@ dependencies = [
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",
     "python-multipart>=0.0.22",
+    "httpx>=0.28.0",
 ]
 
 [project.optional-dependencies]
@@ -21,7 +22,7 @@ dev = [
 ]
 
 [tool.setuptools]
-py-modules = ["main", "config", "retry", "redaction_agent"]
+py-modules = ["main", "config", "retry", "redaction_agent", "pricing"]
 
 [build-system]
 requires = ["setuptools>=68.0"]

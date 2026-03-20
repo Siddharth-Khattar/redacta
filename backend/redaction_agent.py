@@ -3,6 +3,7 @@
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import cast
 
@@ -22,6 +23,17 @@ class RedactionTarget(BaseModel):
     text: str = Field(description="Exact text to redact")
     page: int = Field(description="Page number (1-indexed)")
     context: str | None = Field(default=None, description="Surrounding context for disambiguation")
+
+
+class UsageStats(BaseModel):
+    """Token usage and timing metrics from a Gemini call."""
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    thinking_tokens: int = 0
+    total_tokens: int = 0
+    model: str = ""
+    duration_ms: int = 0
 
 
 class RedactionResponse(BaseModel):
@@ -66,7 +78,7 @@ class PDFRedactionAgent:
         pdf_text: dict[int, str],
         redaction_prompt: str,
         thinking_level: str = "low",
-    ) -> RedactionResponse:
+    ) -> tuple[RedactionResponse, UsageStats]:
         """Use Gemini to identify content that should be redacted."""
         pdf_content = "\n\n".join(
             [f"=== PAGE {page} ===\n{text}" for page, text in pdf_text.items()]
@@ -132,23 +144,38 @@ Identify all text segments that match the redaction criteria. Return a JSON obje
         )
 
         full_response = ""
+        last_chunk = None
+        start_time = time.monotonic()
+
         for chunk in self.client.models.generate_content_stream(
             model=self.model,
             contents=contents,
             config=generate_content_config,
         ):
+            last_chunk = chunk
             if chunk.text:
                 full_response += chunk.text
 
+        duration_ms = int((time.monotonic() - start_time) * 1000)
         logger.info(f"Gemini response length: {len(full_response)} chars")
+
+        usage = UsageStats(model=self.model, duration_ms=duration_ms)
+        if last_chunk and last_chunk.usage_metadata:
+            meta = last_chunk.usage_metadata
+            usage.input_tokens = meta.prompt_token_count or 0
+            usage.output_tokens = meta.candidates_token_count or 0
+            usage.thinking_tokens = meta.thoughts_token_count or 0
+            usage.total_tokens = meta.total_token_count or 0
 
         try:
             response_data = json.loads(full_response)
-            return RedactionResponse(**response_data)
+            return RedactionResponse(**response_data), usage
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse Gemini response: {e}")
             logger.error(f"Raw response length: {len(full_response)} chars")
-            return RedactionResponse(targets=[], reasoning=f"Failed to parse response: {str(e)}")
+            return RedactionResponse(
+                targets=[], reasoning=f"Failed to parse response: {str(e)}"
+            ), usage
 
     def apply_redactions(
         self,
@@ -231,18 +258,20 @@ Identify all text segments that match the redaction criteria. Return a JSON obje
         output_path: str | None = None,
         permanent: bool = False,
         thinking_level: str = "low",
-    ) -> tuple[str, RedactionResponse]:
+    ) -> tuple[str, RedactionResponse, UsageStats]:
         """Complete redaction workflow: extract text, identify targets, apply redactions."""
         logger.info(f"Starting redaction for: {pdf_path}")
 
         pdf_text = self.extract_pdf_text(pdf_path)
         logger.info(f"Extracted text from {len(pdf_text)} pages")
 
-        redaction_response = self.identify_redactions(pdf_text, redaction_prompt, thinking_level)
+        redaction_response, usage = self.identify_redactions(
+            pdf_text, redaction_prompt, thinking_level
+        )
         logger.info(f"Identified {len(redaction_response.targets)} redaction targets")
 
         output_file = self.apply_redactions(
             pdf_path, redaction_response.targets, output_path, permanent
         )
 
-        return output_file, redaction_response
+        return output_file, redaction_response, usage

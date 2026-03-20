@@ -5,6 +5,7 @@ import base64
 import contextlib
 import logging
 import tempfile
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
@@ -12,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from google.genai.errors import ClientError
 
 from config import get_settings
+from pricing import estimate_cost
 from redaction_agent import PDFRedactionAgent
 
 logging.basicConfig(level=logging.INFO)
@@ -98,7 +100,9 @@ async def redact_pdf(
         output_path = temp_input.replace(".pdf", "_redacted.pdf")
         temp_output = output_path
 
-        output_file, response = agent.redact_pdf(
+        request_start = time.monotonic()
+
+        output_file, response, usage = agent.redact_pdf(
             pdf_path=temp_input,
             redaction_prompt=prompt,
             output_path=output_path,
@@ -110,6 +114,10 @@ async def redact_pdf(
             redacted_content = f.read()
 
         redacted_base64 = base64.b64encode(redacted_content).decode("utf-8")
+        total_duration_ms = int((time.monotonic() - request_start) * 1000)
+        cost_usd, pricing_source = estimate_cost(
+            usage.model, usage.input_tokens, usage.output_tokens, usage.thinking_tokens
+        )
 
         logger.info(f"Redaction complete: {len(response.targets)} items redacted")
 
@@ -128,6 +136,17 @@ async def redact_pdf(
             ],
             "reasoning": response.reasoning,
             "permanent": permanent,
+            "usage": {
+                "input_tokens": usage.input_tokens,
+                "output_tokens": usage.output_tokens,
+                "thinking_tokens": usage.thinking_tokens,
+                "total_tokens": usage.total_tokens,
+                "model": usage.model,
+                "gemini_duration_ms": usage.duration_ms,
+                "total_duration_ms": total_duration_ms,
+                "estimated_cost_usd": cost_usd,
+                "pricing_source": pricing_source,
+            },
         }
 
     except ClientError as e:
