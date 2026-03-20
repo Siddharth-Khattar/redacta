@@ -34,8 +34,8 @@ export function Header({
             type="button"
             onClick={onApiKeyClick}
             className="flex items-center justify-center w-8 h-8 rounded-lg text-text-dim hover:text-redact hover:bg-surface transition-colors"
-            aria-label="API key settings"
-            title="API key settings"
+            aria-label="API keys"
+            title="API keys"
           >
             <KeyRound className="w-4 h-4" />
           </button>

@@ -3,13 +3,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  type GeminiModel,
-  RATE_LIMIT_ERROR_MESSAGE,
-  type RedactionResponse,
-  redactPdf,
-  type ThinkingLevel,
-} from "./api/redaction";
+import { RATE_LIMIT_ERROR_MESSAGE, type RedactionResponse, redactPdf } from "./api/redaction";
 import { ApiKeyGate } from "./components/ApiKeyGate";
 import { ApiKeyModal } from "./components/ApiKeyModal";
 import { DownloadBar } from "./components/DownloadBar";
@@ -21,8 +15,9 @@ import { RedactionWorkspace } from "./components/RedactionWorkspace";
 import { ResultPanel } from "./components/ResultPanel";
 import { ScanOverlay } from "./components/ScanOverlay";
 import { UploadZone } from "./components/UploadZone";
+import type { ProviderId } from "./engine/providers/types";
 import { RedactionEngineError } from "./engine/types";
-import { useApiKey } from "./hooks/useApiKey";
+import { useProviderKeys } from "./hooks/useProviderKeys";
 
 type AppState = "upload" | "workspace" | "processing" | "result" | "error";
 type Theme = "dark" | "light";
@@ -34,7 +29,8 @@ function getInitialTheme(): Theme {
 }
 
 export default function App() {
-  const { apiKey, hasApiKey, setApiKey, clearApiKey } = useApiKey();
+  const { keys, hasAnyKey, configuredProviders, setKey, clearKey } = useProviderKeys();
+  const [gatePassed, setGatePassed] = useState(hasAnyKey);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [state, setState] = useState<AppState>("upload");
   const [file, setFile] = useState<File | null>(null);
@@ -48,6 +44,19 @@ export default function App() {
     document.documentElement.classList.toggle("light", theme === "light");
     localStorage.setItem("redacta-theme", theme);
   }, [theme]);
+
+  // Reset to gate when all keys are removed (e.g. via the modal)
+  useEffect(() => {
+    if (!hasAnyKey && gatePassed) {
+      abortControllerRef.current?.abort();
+      setGatePassed(false);
+      setState("upload");
+      setFile(null);
+      setResult(null);
+      setErrorMessage(null);
+      setShowApiKeyModal(false);
+    }
+  }, [hasAnyKey, gatePassed]);
 
   const handleToggleTheme = useCallback(() => {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
@@ -64,9 +73,11 @@ export default function App() {
     async (
       prompt: string,
       permanent: boolean,
-      model: GeminiModel,
-      thinkingLevel: ThinkingLevel,
+      providerId: ProviderId,
+      modelId: string,
+      thinkingLevel: string,
     ) => {
+      const apiKey = keys[providerId];
       if (!file || !apiKey) return;
 
       // Abort any previous request
@@ -78,7 +89,15 @@ export default function App() {
       setErrorMessage(null);
 
       try {
-        const response = await redactPdf(apiKey, file, prompt, permanent, model, thinkingLevel);
+        const response = await redactPdf(
+          apiKey,
+          file,
+          prompt,
+          permanent,
+          providerId,
+          modelId,
+          thinkingLevel,
+        );
 
         // Check if aborted during processing
         if (controller.signal.aborted) return;
@@ -91,7 +110,7 @@ export default function App() {
 
         // If API key is invalid, clear it and go back to gate
         if (error instanceof RedactionEngineError && error.code === "API_KEY_INVALID") {
-          clearApiKey();
+          clearKey(providerId);
           return;
         }
 
@@ -101,7 +120,7 @@ export default function App() {
         setState("error");
       }
     },
-    [file, apiKey, clearApiKey],
+    [file, keys, clearKey],
   );
 
   const handleReset = useCallback(() => {
@@ -123,22 +142,12 @@ export default function App() {
     setState("workspace");
   }, []);
 
-  const handleClearApiKey = useCallback(() => {
-    abortControllerRef.current?.abort();
-    clearApiKey();
-    setShowApiKeyModal(false);
-    setFile(null);
-    setResult(null);
-    setErrorMessage(null);
-    setState("upload");
-  }, [clearApiKey]);
-
-  const handleApiKeyChanged = useCallback(
-    (key: string) => {
-      setApiKey(key);
+  const handleKeyChanged = useCallback(
+    (provider: ProviderId, key: string) => {
+      setKey(provider, key);
       setShowApiKeyModal(false);
     },
-    [setApiKey],
+    [setKey],
   );
 
   const isPostUpload = state !== "upload" && file;
@@ -150,12 +159,12 @@ export default function App() {
         onReset={handleReset}
         theme={theme}
         onToggleTheme={handleToggleTheme}
-        apiKeySet={hasApiKey}
+        apiKeySet={hasAnyKey}
         onApiKeyClick={() => setShowApiKeyModal(true)}
       />
 
       <AnimatePresence mode="wait">
-        {!hasApiKey && (
+        {!gatePassed && (
           <motion.div
             key="api-key-gate"
             initial={{ opacity: 0 }}
@@ -164,11 +173,11 @@ export default function App() {
             transition={{ duration: 0.3 }}
             className="flex-1 flex flex-col"
           >
-            <ApiKeyGate onKeyValidated={setApiKey} />
+            <ApiKeyGate onKeysConfigured={() => setGatePassed(true)} setKey={setKey} />
           </motion.div>
         )}
 
-        {hasApiKey && state === "upload" && (
+        {gatePassed && state === "upload" && (
           <motion.div
             key="upload"
             initial={{ opacity: 0 }}
@@ -181,7 +190,7 @@ export default function App() {
           </motion.div>
         )}
 
-        {hasApiKey && isPostUpload && (
+        {gatePassed && isPostUpload && (
           <motion.div
             key="workspace-area"
             initial={{ opacity: 0 }}
@@ -202,7 +211,12 @@ export default function App() {
               }
               right={
                 <>
-                  {state === "workspace" && <PromptPanel onSubmit={handleSubmit} />}
+                  {state === "workspace" && (
+                    <PromptPanel
+                      configuredProviders={configuredProviders}
+                      onSubmit={handleSubmit}
+                    />
+                  )}
                   {state === "processing" && <ProcessingPanel />}
                   {state === "result" && result && <ResultPanel result={result} />}
                   {state === "error" && (
@@ -241,11 +255,11 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {showApiKeyModal && apiKey && (
+      {showApiKeyModal && hasAnyKey && (
         <ApiKeyModal
-          currentKeyHint={apiKey}
-          onKeyChanged={handleApiKeyChanged}
-          onKeyClear={handleClearApiKey}
+          keys={keys}
+          onKeyChanged={handleKeyChanged}
+          onKeyClear={clearKey}
           onClose={() => setShowApiKeyModal(false)}
         />
       )}

@@ -1,47 +1,84 @@
-// ABOUTME: Redaction prompt input panel with model/thinking selectors and permanent toggle.
+// ABOUTME: Redaction prompt input panel with provider/model/thinking selectors and permanent toggle.
 // ABOUTME: Clean form layout with warm colors and readable text sizes.
 
 import { Info } from "lucide-react";
 import { useState } from "react";
 import {
-  GEMINI_MODELS,
-  type GeminiModel,
   getDefaultThinkingLevel,
-  getSupportedThinkingLevels,
-  THINKING_LEVELS,
-  type ThinkingLevel,
-} from "../api/redaction";
+  getModelDefinition,
+  getModelsForProvider,
+} from "../engine/providers/registry";
+import type { ProviderId, ThinkingLevel } from "../engine/providers/types";
+
+const PROVIDER_LABELS: Record<ProviderId, string> = {
+  gemini: "Gemini",
+  openai: "OpenAI",
+};
+
+const PROVIDER_PREFIXES: Record<ProviderId, string> = {
+  gemini: "Gemini ",
+  openai: "GPT-",
+};
+
+/** Strip the provider-specific prefix from a model label to produce a short display name. */
+function shortModelLabel(label: string, provider: ProviderId): string {
+  const prefix = PROVIDER_PREFIXES[provider];
+  if (label.startsWith(prefix)) {
+    return label.slice(prefix.length);
+  }
+  return label;
+}
 
 interface PromptPanelProps {
+  configuredProviders: ProviderId[];
   onSubmit: (
     prompt: string,
     permanent: boolean,
-    model: GeminiModel,
-    thinkingLevel: ThinkingLevel,
+    providerId: ProviderId,
+    modelId: string,
+    thinkingLevel: string,
   ) => void;
 }
 
-export function PromptPanel({ onSubmit }: PromptPanelProps) {
+export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps) {
+  const initialProvider = configuredProviders[0]!;
+  const initialModels = getModelsForProvider(initialProvider);
+  const initialModel = initialModels[0]!;
+
   const [prompt, setPrompt] = useState("");
   const [permanent, setPermanent] = useState(false);
-  const [model, setModel] = useState<GeminiModel>("gemini-2.0-flash");
-  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>("low");
+  const [selectedProvider, setSelectedProvider] = useState<ProviderId>(initialProvider);
+  const [selectedModel, setSelectedModel] = useState(initialModel.id);
+  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(
+    getDefaultThinkingLevel(initialModel.id),
+  );
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const supportedLevels = getSupportedThinkingLevels(model);
+  const providerModels = getModelsForProvider(selectedProvider);
+  const modelDef = getModelDefinition(selectedModel);
+  const supportedLevels = modelDef?.thinkingLevels ?? [];
   const supportsThinking = supportedLevels.length > 0;
 
-  const handleModelChange = (newModel: GeminiModel) => {
-    setModel(newModel);
-    const newSupported = getSupportedThinkingLevels(newModel);
-    if (newSupported.length > 0 && !newSupported.includes(thinkingLevel)) {
-      setThinkingLevel(getDefaultThinkingLevel(newModel));
+  const handleProviderChange = (provider: ProviderId) => {
+    setSelectedProvider(provider);
+    const models = getModelsForProvider(provider);
+    const firstModel = models[0]!;
+    setSelectedModel(firstModel.id);
+    setThinkingLevel(getDefaultThinkingLevel(firstModel.id));
+  };
+
+  const handleModelChange = (modelId: string) => {
+    setSelectedModel(modelId);
+    const def = getModelDefinition(modelId);
+    const newLevels = def?.thinkingLevels ?? [];
+    if (newLevels.length > 0 && !newLevels.includes(thinkingLevel)) {
+      setThinkingLevel(getDefaultThinkingLevel(modelId));
     }
   };
 
   const handleSubmit = () => {
     if (prompt.trim()) {
-      onSubmit(prompt.trim(), permanent, model, thinkingLevel);
+      onSubmit(prompt.trim(), permanent, selectedProvider, selectedModel, thinkingLevel);
     }
   };
 
@@ -74,11 +111,35 @@ export function PromptPanel({ onSubmit }: PromptPanelProps) {
 
         {/* Settings */}
         <div className="mt-5 space-y-4">
+          {/* Provider */}
+          <div>
+            <p className="text-xs font-medium text-text-dim mb-2">Provider</p>
+            <div className="flex gap-1.5">
+              {configuredProviders.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => handleProviderChange(p)}
+                  className={`
+                    flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                    ${
+                      selectedProvider === p
+                        ? "bg-surface text-text shadow-sm ring-1 ring-border"
+                        : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
+                    }
+                  `}
+                >
+                  {PROVIDER_LABELS[p]}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Model */}
           <div>
             <p className="text-xs font-medium text-text-dim mb-2">Model</p>
             <div className="flex gap-1.5">
-              {GEMINI_MODELS.map((m) => (
+              {providerModels.map((m) => (
                 <button
                   key={m.id}
                   type="button"
@@ -86,13 +147,13 @@ export function PromptPanel({ onSubmit }: PromptPanelProps) {
                   className={`
                     flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
                     ${
-                      model === m.id
+                      selectedModel === m.id
                         ? "bg-surface text-text shadow-sm ring-1 ring-border"
                         : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
                     }
                   `}
                 >
-                  {m.label.replace("Gemini ", "")}
+                  {shortModelLabel(m.label, selectedProvider)}
                 </button>
               ))}
             </div>
@@ -103,28 +164,28 @@ export function PromptPanel({ onSubmit }: PromptPanelProps) {
             <div className="flex items-center gap-2 mb-2">
               <p className="text-xs font-medium text-text-dim">Thinking</p>
               {!supportsThinking && (
-                <span className="text-[11px] text-text-faint">— not available for 2.x</span>
+                <span className="text-[11px] text-text-faint">— not available for this model</span>
               )}
             </div>
             <div
               className={`flex gap-1.5 ${!supportsThinking ? "opacity-35 pointer-events-none" : ""}`}
             >
-              {THINKING_LEVELS.filter((t) => supportedLevels.includes(t.id)).map((t) => (
+              {supportedLevels.map((level) => (
                 <button
-                  key={t.id}
+                  key={level}
                   type="button"
-                  onClick={() => setThinkingLevel(t.id)}
+                  onClick={() => setThinkingLevel(level)}
                   disabled={!supportsThinking}
                   className={`
                     flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
                     ${
-                      thinkingLevel === t.id && supportsThinking
+                      thinkingLevel === level && supportsThinking
                         ? "bg-surface text-text shadow-sm ring-1 ring-border"
                         : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
                     }
                   `}
                 >
-                  {t.label}
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
                 </button>
               ))}
             </div>

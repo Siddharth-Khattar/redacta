@@ -2,6 +2,7 @@
 // ABOUTME: Bridges the client-side engine with the existing UI contract (snake_case response shape).
 
 import { runRedactionPipeline } from "../engine/orchestrator";
+import type { ProviderId } from "../engine/providers/types";
 import { RedactionEngineError } from "../engine/types";
 
 export const RATE_LIMIT_ERROR_MESSAGE =
@@ -19,7 +20,7 @@ export interface UsageStats {
   thinking_tokens: number;
   total_tokens: number;
   model: string;
-  gemini_duration_ms: number;
+  llm_duration_ms: number;
   total_duration_ms: number;
   estimated_cost_usd: number;
   pricing_source: string;
@@ -32,41 +33,6 @@ export interface RedactionResponse {
   reasoning: string | null;
   permanent: boolean;
   usage: UsageStats;
-}
-
-export type GeminiModel = "gemini-2.0-flash" | "gemini-3-flash-preview" | "gemini-3.1-pro-preview";
-
-export type ThinkingLevel = "minimal" | "low" | "medium" | "high";
-
-export const GEMINI_MODELS: { id: GeminiModel; label: string }[] = [
-  { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-  { id: "gemini-3-flash-preview", label: "Gemini 3.0 Flash" },
-  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro" },
-];
-
-export const THINKING_LEVELS: { id: ThinkingLevel; label: string }[] = [
-  { id: "minimal", label: "Minimal" },
-  { id: "low", label: "Low" },
-  { id: "medium", label: "Medium" },
-  { id: "high", label: "High" },
-];
-
-/** Supported thinking levels per model family */
-const MODEL_THINKING_SUPPORT: Record<string, ThinkingLevel[]> = {
-  "gemini-2.0-flash": [],
-  "gemini-3-flash-preview": ["minimal", "low", "medium", "high"],
-  "gemini-3.1-pro-preview": ["low", "medium", "high"],
-};
-
-/** Get the thinking levels supported by a model. Empty array means no thinking support. */
-export function getSupportedThinkingLevels(model: GeminiModel): ThinkingLevel[] {
-  return MODEL_THINKING_SUPPORT[model] ?? [];
-}
-
-/** Get the default thinking level for a model. */
-export function getDefaultThinkingLevel(model: GeminiModel): ThinkingLevel {
-  const supported = getSupportedThinkingLevels(model);
-  return supported.length > 0 ? supported[0]! : "low";
 }
 
 /** Convert a Uint8Array to a base64 string. */
@@ -90,8 +56,9 @@ export async function redactPdf(
   file: File,
   prompt: string,
   permanent: boolean,
-  model: GeminiModel = "gemini-2.0-flash",
-  thinkingLevel: ThinkingLevel = "low",
+  providerId: ProviderId,
+  modelId: string,
+  thinkingLevel: string,
 ): Promise<RedactionResponse> {
   try {
     const result = await runRedactionPipeline(
@@ -99,7 +66,8 @@ export async function redactPdf(
       file,
       prompt,
       permanent,
-      model,
+      providerId,
+      modelId,
       thinkingLevel,
     );
 
@@ -119,7 +87,7 @@ export async function redactPdf(
         thinking_tokens: result.tokenUsage.thinkingTokens,
         total_tokens: result.tokenUsage.totalTokens,
         model: result.tokenUsage.model,
-        gemini_duration_ms: result.tokenUsage.durationMs,
+        llm_duration_ms: result.tokenUsage.durationMs,
         total_duration_ms: result.totalDurationMs,
         estimated_cost_usd: result.costEstimate.costUsd,
         pricing_source: result.costEstimate.pricingSource,

@@ -1,4 +1,4 @@
-// ABOUTME: Gemini model pricing fetcher with OpenRouter as live source.
+// ABOUTME: LLM model pricing fetcher with OpenRouter as live source.
 // ABOUTME: Caches pricing in memory with 6h TTL, falls back to hardcoded defaults.
 
 import type { CostEstimate, ModelPricing } from "./types";
@@ -9,16 +9,20 @@ const FETCH_TIMEOUT_MS = 10_000;
 
 /** Mapping from our model IDs to OpenRouter model IDs */
 const MODEL_ID_MAP: Record<string, string> = {
-  "gemini-2.0-flash": "google/gemini-2.0-flash-001",
+  "gemini-2.5-flash": "google/gemini-2.5-flash",
   "gemini-3-flash-preview": "google/gemini-3-flash-preview",
   "gemini-3.1-pro-preview": "google/gemini-3.1-pro-preview",
+  "gpt-5.4": "openai/gpt-5.4",
+  "gpt-5.4-mini": "openai/gpt-5.4-mini",
 };
 
-/** Accurate defaults as of March 2026 (source: ai.google.dev/gemini-api/docs/pricing) */
+/** Hardcoded defaults as of March 2026 (per million tokens) */
 const DEFAULT_PRICING: Record<string, ModelPricing> = {
-  "gemini-2.0-flash": { input: 0.1, output: 0.4, thinking: 0 },
+  "gemini-2.5-flash": { input: 0.15, output: 0.6, thinking: 0.6 },
   "gemini-3-flash-preview": { input: 0.5, output: 3.0, thinking: 3.0 },
   "gemini-3.1-pro-preview": { input: 2.0, output: 12.0, thinking: 12.0 },
+  "gpt-5.4": { input: 2.5, output: 15.0, thinking: 15.0 },
+  "gpt-5.4-mini": { input: 0.75, output: 4.5, thinking: 4.5 },
 };
 
 interface PricingCache {
@@ -105,7 +109,7 @@ export async function fetchPricing(): Promise<{
   return { pricing: DEFAULT_PRICING, source: "default" };
 }
 
-/** Estimate cost in USD for a Gemini call. */
+/** Estimate cost in USD for an LLM call. */
 export function estimateCost(
   model: string,
   inputTokens: number,

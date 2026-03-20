@@ -1,19 +1,21 @@
 // ABOUTME: Pipeline coordinator for the client-side PDF redaction workflow.
 // ABOUTME: Orchestrates: extract text → identify redactions → apply redactions → estimate cost.
 
-import { identifyRedactions } from "./gemini";
 import { applyRedactions, extractText } from "./pdf";
 import { estimateCost, fetchPricing } from "./pricing";
+import { getProvider } from "./providers/registry";
+import type { ProviderId } from "./providers/types";
 import type { RedactionPipelineResult } from "./types";
 
 /**
  * Run the full redaction pipeline: extract → identify → redact → cost.
  *
- * @param apiKey     - User's Gemini API key
- * @param file       - The PDF File object
- * @param prompt     - Natural-language redaction instructions
- * @param permanent  - If true, permanently remove text beneath redactions
- * @param model      - Gemini model identifier
+ * @param apiKey       - User's API key for the selected provider
+ * @param file         - The PDF File object
+ * @param prompt       - Natural-language redaction instructions
+ * @param permanent    - If true, permanently remove text beneath redactions
+ * @param providerId   - LLM provider identifier
+ * @param modelId      - Model identifier within the provider
  * @param thinkingLevel - Thinking depth: minimal, low, medium, high
  */
 export async function runRedactionPipeline(
@@ -21,10 +23,13 @@ export async function runRedactionPipeline(
   file: File,
   prompt: string,
   permanent: boolean,
-  model: string,
+  providerId: ProviderId,
+  modelId: string,
   thinkingLevel: string,
 ): Promise<RedactionPipelineResult> {
   const startTime = performance.now();
+
+  const provider = getProvider(providerId);
 
   // 1. Read file into ArrayBuffer
   const pdfBytes = await file.arrayBuffer();
@@ -33,19 +38,19 @@ export async function runRedactionPipeline(
   const pdfText = await extractText(pdfBytes);
 
   // 3. Fetch pricing and identify redactions in parallel
-  const [pricingResult, geminiResult] = await Promise.all([
+  const [pricingResult, llmResult] = await Promise.all([
     fetchPricing(),
-    identifyRedactions(apiKey, model, pdfText, prompt, thinkingLevel),
+    provider.identifyRedactions(apiKey, modelId, pdfText, prompt, thinkingLevel),
   ]);
 
-  const { result: redactionResult, usage } = geminiResult;
+  const { result: redactionResult, usage } = llmResult;
 
   // 4. Apply redactions to the PDF
   const redactedPdf = await applyRedactions(pdfBytes, redactionResult.targets, permanent);
 
   // 5. Estimate cost
   const costEstimate = estimateCost(
-    model,
+    modelId,
     usage.inputTokens,
     usage.outputTokens,
     usage.thinkingTokens,

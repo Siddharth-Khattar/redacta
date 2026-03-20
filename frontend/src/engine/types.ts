@@ -1,5 +1,5 @@
 // ABOUTME: Engine-internal types and error class for the client-side redaction pipeline.
-// ABOUTME: Shared across pdf, gemini, pricing, and orchestrator modules.
+// ABOUTME: Shared across pdf, providers, pricing, and orchestrator modules.
 
 export interface RedactionTarget {
   text: string;
@@ -7,7 +7,7 @@ export interface RedactionTarget {
   context: string | null;
 }
 
-export interface GeminiRedactionResult {
+export interface RedactionResult {
   targets: RedactionTarget[];
   reasoning: string | null;
 }
