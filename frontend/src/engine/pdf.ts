@@ -2,7 +2,15 @@
 // ABOUTME: Lazy-loads the WASM module on first use via dynamic import.
 
 import type { PDFDocument, PDFPage, Quad, Rect } from "mupdf";
-import { type HighlightColor, RedactionEngineError, type RedactionTarget } from "./types";
+import {
+  type BoundingRect,
+  type HighlightColor,
+  type ImageFillColor,
+  type ImageRedactionSettings,
+  type ImageTarget,
+  RedactionEngineError,
+  type RedactionTarget,
+} from "./types";
 
 type MupdfModule = typeof import("mupdf");
 
@@ -34,6 +42,142 @@ function quadToRect(quad: Quad): Rect {
   ];
 }
 
+// ── Image fill color mapping ──────────────────────────────────────────
+
+const IMAGE_FILL_COLORS: Record<ImageFillColor, [number, number, number]> = {
+  white: [1, 1, 1],
+  lightgray: [0.92, 0.92, 0.92],
+  black: [0, 0, 0],
+};
+
+const IMAGE_BORDER_COLOR: [number, number, number] = [0.78, 0.78, 0.78];
+const IMAGE_LABEL_COLOR: [number, number, number] = [0.55, 0.55, 0.55];
+
+// ── Image detection ───────────────────────────────────────────────────
+
+/** Detect all images across every page. Returns a stable list of ImageTargets. */
+export async function detectImages(pdfBytes: ArrayBuffer): Promise<ImageTarget[]> {
+  const mupdf = await getMupdf();
+  const doc = mupdf.Document.openDocument(pdfBytes, "application/pdf");
+  const targets: ImageTarget[] = [];
+
+  try {
+    const pageCount = doc.countPages();
+    for (let i = 0; i < pageCount; i++) {
+      const page = doc.loadPage(i);
+      let imageIndex = 0;
+      page.toStructuredText("preserve-images").walk({
+        onImageBlock(bbox: Rect) {
+          targets.push({
+            id: `p${i + 1}-${imageIndex}`,
+            page: i + 1,
+            rect: bbox as BoundingRect,
+          });
+          imageIndex++;
+        },
+      });
+    }
+  } finally {
+    doc.destroy();
+  }
+
+  return targets;
+}
+
+// ── Styled image annotation helpers ───────────────────────────────────
+
+/** Create styled overlay annotations for a redacted image area. */
+function createImageOverlay(page: PDFPage, rect: Rect, settings: ImageRedactionSettings) {
+  const fillColor = IMAGE_FILL_COLORS[settings.fillColor];
+
+  // Filled rectangle with thin border
+  const overlay = page.createAnnotation("Square");
+  overlay.setRect(rect);
+  overlay.setColor(IMAGE_BORDER_COLOR);
+  overlay.setInteriorColor(fillColor);
+  overlay.setBorderWidth(0.5);
+  overlay.setOpacity(1);
+  overlay.update();
+
+  // Centered label text
+  if (settings.showLabel && settings.label) {
+    const [x0, y0, x1, y1] = rect;
+    const rectWidth = x1 - x0;
+    const rectHeight = y1 - y0;
+    const fontSize = Math.max(6, Math.min(14, Math.min(rectWidth, rectHeight) * 0.1));
+    const textHeight = fontSize * 2;
+    const centerY = (y0 + y1) / 2;
+
+    // Determine label text color: use lighter text on black fill, darker on light fills
+    const labelColor: [number, number, number] =
+      settings.fillColor === "black" ? [0.45, 0.45, 0.45] : IMAGE_LABEL_COLOR;
+
+    const label = page.createAnnotation("FreeText");
+    label.setRect([x0, centerY - textHeight / 2, x1, centerY + textHeight / 2]);
+    label.setContents(settings.label);
+    label.setDefaultAppearance("Helv", fontSize, labelColor);
+    label.setBorderWidth(0);
+    label.setQuadding(1); // Center-aligned
+    label.update();
+  }
+}
+
+/**
+ * Apply image redactions on a single page.
+ *
+ * For permanent mode, creates Redact annotations (caller must call applyRedactions after).
+ * For visual mode, creates styled overlay annotations directly.
+ */
+/**
+ * Create Redact annotations for images on a page (permanent mode only).
+ * Returns the list of image targets that were marked for redaction.
+ * Caller must call applyRedactions after, then addImageOverlays to draw labels.
+ */
+function markPageImagesForRedaction(
+  page: PDFPage,
+  pageNumber: number,
+  imageTargets: ImageTarget[],
+  excludedImageIds: Set<string>,
+): ImageTarget[] {
+  const pageImages = imageTargets.filter(
+    (t) => t.page === pageNumber && !excludedImageIds.has(t.id),
+  );
+  for (const img of pageImages) {
+    const annot = page.createAnnotation("Redact");
+    annot.setRect(img.rect as Rect);
+  }
+  return pageImages;
+}
+
+/** Create styled overlay annotations for previously redacted images. */
+function addImageOverlays(page: PDFPage, images: ImageTarget[], settings: ImageRedactionSettings) {
+  for (const img of images) {
+    createImageOverlay(page, img.rect as Rect, settings);
+  }
+}
+
+/**
+ * Apply image redactions on a single page (visual/non-permanent mode only).
+ * Creates styled overlays directly without destroying the image.
+ */
+function processPageImagesVisual(
+  page: PDFPage,
+  pageNumber: number,
+  imageTargets: ImageTarget[],
+  settings: ImageRedactionSettings,
+) {
+  const excluded = new Set(settings.excludedImageIds);
+  const pageImages = imageTargets.filter((t) => t.page === pageNumber && !excluded.has(t.id));
+
+  if (pageImages.length === 0) return;
+
+  for (const img of pageImages) {
+    createImageOverlay(page, img.rect as Rect, settings);
+  }
+}
+
+// ── Text extraction ───────────────────────────────────────────────────
+
 /** Extract text from each page of a PDF. Returns a Map of page number (1-indexed) to text. */
 export async function extractText(pdfBytes: ArrayBuffer): Promise<Map<number, string>> {
   const mupdf = await getMupdf();
@@ -54,6 +198,8 @@ export async function extractText(pdfBytes: ArrayBuffer): Promise<Map<number, st
   return pages;
 }
 
+// ── Redaction ─────────────────────────────────────────────────────────
+
 /**
  * Apply redactions to a PDF and return the modified document as bytes.
  *
@@ -64,6 +210,8 @@ export async function applyRedactions(
   pdfBytes: ArrayBuffer,
   targets: RedactionTarget[],
   permanent: boolean,
+  imageTargets: ImageTarget[],
+  imageSettings: ImageRedactionSettings | null,
 ): Promise<Uint8Array> {
   const mupdf = await getMupdf();
   const doc = mupdf.Document.openDocument(pdfBytes, "application/pdf");
@@ -76,7 +224,7 @@ export async function applyRedactions(
 
     const pageCount = doc.countPages();
 
-    // Group targets by 0-indexed page
+    // Group text targets by 0-indexed page
     const targetsByPage = new Map<number, RedactionTarget[]>();
     for (const target of targets) {
       const pageIdx = target.page - 1;
@@ -86,37 +234,73 @@ export async function applyRedactions(
       targetsByPage.set(pageIdx, existing);
     }
 
-    for (const [pageIdx, pageTargets] of targetsByPage) {
+    // Determine which pages need processing
+    const hasImages = imageSettings !== null && imageTargets.length > 0;
+    const imagePagesNeeded = hasImages
+      ? new Set(imageTargets.map((t) => t.page - 1))
+      : new Set<number>();
+
+    for (let pageIdx = 0; pageIdx < pageCount; pageIdx++) {
+      const pageTargets = targetsByPage.get(pageIdx);
+      const hasTextTargets = pageTargets && pageTargets.length > 0;
+      const needsImageProcessing = imagePagesNeeded.has(pageIdx);
+
+      if (!hasTextTargets && !needsImageProcessing) continue;
+
       const page: PDFPage = pdfDoc.loadPage(pageIdx);
 
-      if (permanent) {
-        for (const target of pageTargets) {
-          const hits: Quad[][] = page.search(target.text);
-          if (hits.length === 0) continue;
+      const excluded = imageSettings ? new Set(imageSettings.excludedImageIds) : new Set<string>();
 
-          for (const quads of hits) {
-            for (const quad of quads) {
-              const annot = page.createAnnotation("Redact");
-              annot.setRect(quadToRect(quad));
+      if (permanent) {
+        if (hasTextTargets) {
+          for (const target of pageTargets) {
+            const hits: Quad[][] = page.search(target.text);
+            if (hits.length === 0) continue;
+
+            for (const quads of hits) {
+              for (const quad of quads) {
+                const annot = page.createAnnotation("Redact");
+                annot.setRect(quadToRect(quad));
+              }
             }
           }
         }
-        page.applyRedactions(true, 0); // REDACT_IMAGE_NONE = 0
-      } else {
-        for (const target of pageTargets) {
-          const hits: Quad[][] = page.search(target.text);
-          if (hits.length === 0) continue;
 
-          for (const quads of hits) {
-            for (const quad of quads) {
-              const annot = page.createAnnotation("Square");
-              annot.setRect(quadToRect(quad));
-              annot.setColor([0, 0, 0]);
-              annot.setInteriorColor([0, 0, 0]);
-              annot.setBorderWidth(0);
-              annot.setOpacity(1);
+        // Mark images for redaction (Redact annotations only, no overlays yet)
+        let redactedImages: ImageTarget[] = [];
+        if (needsImageProcessing && imageSettings) {
+          redactedImages = markPageImagesForRedaction(page, pageIdx + 1, imageTargets, excluded);
+        }
+
+        if (hasTextTargets || redactedImages.length > 0) {
+          page.applyRedactions(true, 2); // REDACT_IMAGE_REMOVE
+        }
+
+        // Now that images are destroyed, add styled overlays on top
+        if (redactedImages.length > 0 && imageSettings) {
+          addImageOverlays(page, redactedImages, imageSettings);
+        }
+      } else {
+        if (hasTextTargets) {
+          for (const target of pageTargets) {
+            const hits: Quad[][] = page.search(target.text);
+            if (hits.length === 0) continue;
+
+            for (const quads of hits) {
+              for (const quad of quads) {
+                const annot = page.createAnnotation("Square");
+                annot.setRect(quadToRect(quad));
+                annot.setColor([0, 0, 0]);
+                annot.setInteriorColor([0, 0, 0]);
+                annot.setBorderWidth(0);
+                annot.setOpacity(1);
+              }
             }
           }
+        }
+
+        if (needsImageProcessing && imageSettings) {
+          processPageImagesVisual(page, pageIdx + 1, imageTargets, imageSettings);
         }
       }
     }
@@ -127,6 +311,8 @@ export async function applyRedactions(
     doc.destroy();
   }
 }
+
+// ── Pseudonymisation ──────────────────────────────────────────────────
 
 const HIGHLIGHT_COLORS: Record<HighlightColor, [number, number, number]> = {
   white: [1, 1, 1],
@@ -149,6 +335,8 @@ export async function applyPseudonymisation(
   pdfBytes: ArrayBuffer,
   targets: RedactionTarget[],
   highlightColor: HighlightColor,
+  imageTargets: ImageTarget[],
+  imageSettings: ImageRedactionSettings | null,
 ): Promise<Uint8Array> {
   const mupdf = await getMupdf();
   const doc = mupdf.Document.openDocument(pdfBytes, "application/pdf");
@@ -162,7 +350,7 @@ export async function applyPseudonymisation(
     const pageCount = doc.countPages();
     const bgColor = HIGHLIGHT_COLORS[highlightColor];
 
-    // Group targets by 0-indexed page
+    // Group text targets by 0-indexed page
     const targetsByPage = new Map<number, RedactionTarget[]>();
     for (const target of targets) {
       const pageIdx = target.page - 1;
@@ -172,31 +360,59 @@ export async function applyPseudonymisation(
       targetsByPage.set(pageIdx, existing);
     }
 
-    for (const [pageIdx, pageTargets] of targetsByPage) {
+    const hasImages = imageSettings !== null && imageTargets.length > 0;
+    const imagePagesNeeded = hasImages
+      ? new Set(imageTargets.map((t) => t.page - 1))
+      : new Set<number>();
+
+    for (let pageIdx = 0; pageIdx < pageCount; pageIdx++) {
+      const pageTargets = targetsByPage.get(pageIdx);
+      const hasTextTargets = pageTargets && pageTargets.length > 0;
+      const needsImageProcessing = imagePagesNeeded.has(pageIdx);
+
+      if (!hasTextTargets && !needsImageProcessing) continue;
+
       const page: PDFPage = pdfDoc.loadPage(pageIdx);
 
-      // Phase 1: Collect all hit positions before any redactions
+      // Phase 1: Collect all text hit positions before any redactions
       const collected: Array<{ rect: Rect; pseudonym: string }> = [];
 
-      for (const target of pageTargets) {
-        const pseudonym = target.pseudonym ?? target.text;
-        const hits: Quad[][] = page.search(target.text);
-        if (hits.length === 0) continue;
+      if (hasTextTargets) {
+        for (const target of pageTargets) {
+          const pseudonym = target.pseudonym ?? target.text;
+          const hits: Quad[][] = page.search(target.text);
+          if (hits.length === 0) continue;
 
-        for (const quads of hits) {
-          for (const quad of quads) {
-            const rect = quadToRect(quad);
-            collected.push({ rect, pseudonym });
+          for (const quads of hits) {
+            for (const quad of quads) {
+              const rect = quadToRect(quad);
+              collected.push({ rect, pseudonym });
+            }
           }
         }
       }
 
-      // Phase 2a: Create Redact annotations to remove original text
+      const excluded = imageSettings ? new Set(imageSettings.excludedImageIds) : new Set<string>();
+
+      // Phase 2a: Create Redact annotations to remove original text and images
       for (const { rect } of collected) {
         const annot = page.createAnnotation("Redact");
         annot.setRect(rect);
       }
-      page.applyRedactions(true, 0); // REDACT_IMAGE_NONE = 0
+
+      let redactedImages: ImageTarget[] = [];
+      if (needsImageProcessing && imageSettings) {
+        redactedImages = markPageImagesForRedaction(page, pageIdx + 1, imageTargets, excluded);
+      }
+
+      if (collected.length > 0 || redactedImages.length > 0) {
+        page.applyRedactions(true, 2); // REDACT_IMAGE_REMOVE
+      }
+
+      // Add styled image overlays after redaction has destroyed the images
+      if (redactedImages.length > 0 && imageSettings) {
+        addImageOverlays(page, redactedImages, imageSettings);
+      }
 
       // Phase 2b: Overlay FreeText annotations with pseudonym labels.
       // FreeText annotations don't support interior color (IC), so we layer a

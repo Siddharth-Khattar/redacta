@@ -3,6 +3,30 @@
 
 export type ProcessingMode = "redact" | "pseudonymise";
 export type HighlightColor = "white" | "blue" | "green" | "yellow" | "pink" | "purple";
+export type ImageFillColor = "white" | "lightgray" | "black";
+
+/** Bounding rectangle [x0, y0, x1, y1] in PDF coordinates. */
+export type BoundingRect = [number, number, number, number];
+
+export interface ImageTarget {
+  id: string;
+  page: number;
+  rect: BoundingRect;
+}
+
+export interface ImageRedactionSettings {
+  fillColor: ImageFillColor;
+  label: string;
+  showLabel: boolean;
+  excludedImageIds: string[];
+}
+
+export const DEFAULT_IMAGE_SETTINGS: ImageRedactionSettings = {
+  fillColor: "white",
+  label: "REDACTED",
+  showLabel: true,
+  excludedImageIds: [],
+};
 
 export interface RedactionTarget {
   text: string;
@@ -45,6 +69,8 @@ export interface RedactionPipelineResult {
   permanent: boolean;
   mode: ProcessingMode;
   mapping: Record<string, string> | null;
+  imageTargets: ImageTarget[];
+  imageSettings: ImageRedactionSettings;
   tokenUsage: TokenUsage;
   costEstimate: CostEstimate;
   totalDurationMs: number;

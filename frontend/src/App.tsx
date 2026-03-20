@@ -5,10 +5,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   type HighlightColor,
+  type ImageRedactionSettings,
   type ProcessingMode,
   RATE_LIMIT_ERROR_MESSAGE,
   type RedactionResponse,
-  reapplyHighlightColor,
+  reapplySettings,
   redactPdf,
 } from "./api/redaction";
 import { ApiKeyGate } from "./components/ApiKeyGate";
@@ -86,6 +87,7 @@ export default function App() {
       modelId: string,
       thinkingLevel: string,
       highlightColor: HighlightColor,
+      redactImages: boolean,
     ) => {
       const apiKey = keys[providerId];
       if (!file || !apiKey) return;
@@ -110,6 +112,7 @@ export default function App() {
           thinkingLevel,
           mode,
           highlightColor,
+          redactImages,
         );
 
         // Check if aborted during processing
@@ -155,11 +158,37 @@ export default function App() {
     setState("workspace");
   }, []);
 
-  const handleHighlightColorChange = useCallback(
-    async (color: HighlightColor) => {
-      if (!file || !result || result.mode !== "pseudonymise") return;
-      const newPdf = await reapplyHighlightColor(file, result.targets, color);
-      setResult((prev) => (prev ? { ...prev, redacted_pdf: newPdf, highlightColor: color } : prev));
+  /** Unified re-render handler for any post-processing visual change. */
+  const handleRerender = useCallback(
+    async (updates: {
+      highlightColor?: HighlightColor;
+      imageSettings?: ImageRedactionSettings;
+    }) => {
+      if (!file || !result) return;
+
+      const color = updates.highlightColor ?? result.highlightColor;
+      const imgSettings = updates.imageSettings ?? result.imageSettings;
+
+      const newPdf = await reapplySettings(
+        file,
+        result.targets,
+        result.mode,
+        result.permanent,
+        color,
+        result.imageTargets,
+        imgSettings,
+      );
+
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              redacted_pdf: newPdf,
+              highlightColor: color,
+              imageSettings: imgSettings,
+            }
+          : prev,
+      );
     },
     [file, result],
   );
@@ -241,10 +270,7 @@ export default function App() {
                   )}
                   {state === "processing" && <ProcessingPanel mode={lastMode} />}
                   {state === "result" && result && (
-                    <ResultPanel
-                      result={result}
-                      onHighlightColorChange={handleHighlightColorChange}
-                    />
+                    <ResultPanel result={result} onRerender={handleRerender} />
                   )}
                   {state === "error" && (
                     <div className="flex-1 flex items-center justify-center p-8">

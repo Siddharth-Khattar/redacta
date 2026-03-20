@@ -1,24 +1,34 @@
 // ABOUTME: Pipeline coordinator for the client-side PDF redaction workflow.
 // ABOUTME: Orchestrates: extract text → identify targets → apply redactions/pseudonymisation → estimate cost.
 
-import { applyPseudonymisation, applyRedactions, extractText } from "./pdf";
+import { applyPseudonymisation, applyRedactions, detectImages, extractText } from "./pdf";
 import { estimateCost, fetchPricing } from "./pricing";
 import { getProvider } from "./providers/registry";
 import type { ProviderId } from "./providers/types";
-import type { HighlightColor, ProcessingMode, RedactionPipelineResult } from "./types";
+import {
+  DEFAULT_IMAGE_SETTINGS,
+  type HighlightColor,
+  type ImageRedactionSettings,
+  type ImageTarget,
+  type ProcessingMode,
+  type RedactionPipelineResult,
+  type RedactionResult,
+  type TokenUsage,
+} from "./types";
 
 /**
  * Run the full redaction pipeline: extract → identify → redact/pseudonymise → cost.
  *
  * @param apiKey         - User's API key for the selected provider
  * @param file           - The PDF File object
- * @param prompt         - Natural-language redaction instructions
+ * @param prompt         - Natural-language redaction instructions (empty for image-only mode)
  * @param permanent      - If true, permanently remove text beneath redactions
  * @param providerId     - LLM provider identifier
  * @param modelId        - Model identifier within the provider
  * @param thinkingLevel  - Thinking depth: minimal, low, medium, high
  * @param mode           - Processing mode: redact or pseudonymise
  * @param highlightColor - Background color for pseudonymisation labels
+ * @param redactImages   - If true, detect and redact all images on every page
  */
 export async function runRedactionPipeline(
   apiKey: string,
@@ -30,32 +40,65 @@ export async function runRedactionPipeline(
   thinkingLevel: string,
   mode: ProcessingMode = "redact",
   highlightColor: HighlightColor = "white",
+  redactImages = false,
 ): Promise<RedactionPipelineResult> {
   const startTime = performance.now();
-
-  const provider = getProvider(providerId);
-
-  // 1. Read file into ArrayBuffer
   const pdfBytes = await file.arrayBuffer();
+  const hasPrompt = prompt.length > 0;
 
-  // 2. Extract text from all pages (lazy-loads WASM here)
-  const pdfText = await extractText(pdfBytes);
+  let redactionResult: RedactionResult;
+  let usage: TokenUsage;
 
-  // 3. Fetch pricing and identify targets in parallel
-  const [pricingResult, llmResult] = await Promise.all([
-    fetchPricing(),
-    provider.identifyTargets(apiKey, modelId, pdfText, prompt, thinkingLevel, mode),
-  ]);
+  if (hasPrompt) {
+    const provider = getProvider(providerId);
+    const pdfText = await extractText(pdfBytes);
+    const llmResult = await provider.identifyTargets(
+      apiKey,
+      modelId,
+      pdfText,
+      prompt,
+      thinkingLevel,
+      mode,
+    );
+    redactionResult = llmResult.result;
+    usage = llmResult.usage;
+  } else {
+    // Image-only mode: skip LLM entirely
+    redactionResult = { targets: [], reasoning: null };
+    usage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      thinkingTokens: 0,
+      totalTokens: 0,
+      model: modelId,
+      durationMs: 0,
+    };
+  }
 
-  const { result: redactionResult, usage } = llmResult;
+  // Detect images if requested
+  const imageTargets: ImageTarget[] = redactImages ? await detectImages(pdfBytes) : [];
+  const imageSettings: ImageRedactionSettings | null =
+    imageTargets.length > 0 ? { ...DEFAULT_IMAGE_SETTINGS } : null;
 
-  // 4. Apply redactions or pseudonymisation based on mode
+  // Apply redactions or pseudonymisation
   const redactedPdf =
     mode === "pseudonymise"
-      ? await applyPseudonymisation(pdfBytes, redactionResult.targets, highlightColor)
-      : await applyRedactions(pdfBytes, redactionResult.targets, permanent);
+      ? await applyPseudonymisation(
+          pdfBytes,
+          redactionResult.targets,
+          highlightColor,
+          imageTargets,
+          imageSettings,
+        )
+      : await applyRedactions(
+          pdfBytes,
+          redactionResult.targets,
+          permanent,
+          imageTargets,
+          imageSettings,
+        );
 
-  // 5. Estimate cost
+  const pricingResult = await fetchPricing();
   const costEstimate = estimateCost(
     modelId,
     usage.inputTokens,
@@ -75,6 +118,8 @@ export async function runRedactionPipeline(
     permanent,
     mode,
     mapping: redactionResult.mapping ?? null,
+    imageTargets,
+    imageSettings: imageSettings ?? DEFAULT_IMAGE_SETTINGS,
     tokenUsage: usage,
     costEstimate,
     totalDurationMs,

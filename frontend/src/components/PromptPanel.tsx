@@ -49,6 +49,7 @@ interface PromptPanelProps {
     modelId: string,
     thinkingLevel: string,
     highlightColor: HighlightColor,
+    redactImages: boolean,
   ) => void;
 }
 
@@ -60,6 +61,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<ProcessingMode>("redact");
   const [permanent, setPermanent] = useState(false);
+  const [redactImages, setRedactImages] = useState(false);
   const [highlightColor, setHighlightColor] = useState<HighlightColor>("white");
   const [selectedProvider, setSelectedProvider] = useState<ProviderId>(initialProvider);
   const [selectedModel, setSelectedModel] = useState(initialModel.id);
@@ -90,8 +92,10 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
     }
   };
 
+  const canSubmit = prompt.trim() || redactImages;
+
   const handleSubmit = () => {
-    if (prompt.trim()) {
+    if (canSubmit) {
       onSubmit(
         prompt.trim(),
         mode,
@@ -100,12 +104,13 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
         selectedModel,
         thinkingLevel,
         highlightColor,
+        redactImages,
       );
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && prompt.trim()) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSubmit) {
       handleSubmit();
     }
   };
@@ -333,17 +338,40 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
               </div>
             </div>
           )}
+
+          {/* Redact images toggle */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-text-dim">Remove images</p>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={redactImages}
+              onClick={() => setRedactImages(!redactImages)}
+              className={`
+                relative w-10 h-5.5 rounded-full transition-colors duration-200
+                ${redactImages ? (mode === "pseudonymise" ? "bg-pseudo" : "bg-redact") : "bg-border"}
+              `}
+            >
+              <span
+                className={`
+                  absolute top-0.75 left-0.75 w-4 h-4 rounded-full bg-white
+                  transition-transform duration-200 shadow-sm
+                  ${redactImages ? "translate-x-4.5" : "translate-x-0"}
+                `}
+              />
+            </button>
+          </div>
         </div>
 
         {/* Submit */}
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!prompt.trim()}
+          disabled={!canSubmit}
           className={`
             mt-6 w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200
             ${
-              prompt.trim()
+              canSubmit
                 ? mode === "redact"
                   ? "bg-redact hover:bg-redact-hover text-white cursor-pointer shadow-sm"
                   : "bg-pseudo hover:bg-pseudo-hover text-white cursor-pointer shadow-sm"
@@ -351,7 +379,11 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
             }
           `}
         >
-          {mode === "redact" ? "Redact Document" : "Pseudonymise Document"}
+          {!prompt.trim() && redactImages
+            ? "Remove Images"
+            : mode === "redact"
+              ? "Redact Document"
+              : "Pseudonymise Document"}
         </button>
 
         <p className="text-center mt-3 text-xs text-text-faint">

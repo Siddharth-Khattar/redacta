@@ -2,11 +2,18 @@
 // ABOUTME: Bridges the client-side engine with the existing UI contract (snake_case response shape).
 
 import { runRedactionPipeline } from "../engine/orchestrator";
-import { applyPseudonymisation } from "../engine/pdf";
+import { applyPseudonymisation, applyRedactions } from "../engine/pdf";
 import type { ProviderId } from "../engine/providers/types";
-import { type HighlightColor, type ProcessingMode, RedactionEngineError } from "../engine/types";
+import {
+  type HighlightColor,
+  type ImageFillColor,
+  type ImageRedactionSettings,
+  type ImageTarget,
+  type ProcessingMode,
+  RedactionEngineError,
+} from "../engine/types";
 
-export type { HighlightColor, ProcessingMode };
+export type { HighlightColor, ImageFillColor, ImageRedactionSettings, ImageTarget, ProcessingMode };
 
 export const RATE_LIMIT_ERROR_MESSAGE =
   "Our AI service is currently experiencing high demand. Please wait a moment and try again.";
@@ -38,6 +45,9 @@ export interface RedactionResponse {
   permanent: boolean;
   mode: ProcessingMode;
   highlightColor: HighlightColor;
+  redactImages: boolean;
+  imageTargets: ImageTarget[];
+  imageSettings: ImageRedactionSettings;
   mapping: Record<string, string> | null;
   usage: UsageStats;
 }
@@ -68,6 +78,7 @@ export async function redactPdf(
   thinkingLevel: string,
   mode: ProcessingMode = "redact",
   highlightColor: HighlightColor = "white",
+  redactImages = false,
 ): Promise<RedactionResponse> {
   try {
     const result = await runRedactionPipeline(
@@ -80,6 +91,7 @@ export async function redactPdf(
       thinkingLevel,
       mode,
       highlightColor,
+      redactImages,
     );
 
     return {
@@ -95,6 +107,9 @@ export async function redactPdf(
       permanent: result.permanent,
       mode: result.mode,
       highlightColor,
+      redactImages,
+      imageTargets: result.imageTargets,
+      imageSettings: result.imageSettings,
       mapping: result.mapping,
       usage: {
         input_tokens: result.tokenUsage.inputTokens,
@@ -163,15 +178,25 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
- * Re-apply pseudonymisation with a different highlight color.
+ * Re-apply PDF rendering with updated visual settings.
  * Reuses cached targets so no LLM call is needed.
+ * Works for both redact and pseudonymise modes.
  */
-export async function reapplyHighlightColor(
+export async function reapplySettings(
   file: File,
   targets: RedactionTarget[],
+  mode: ProcessingMode,
+  permanent: boolean,
   highlightColor: HighlightColor,
+  imageTargets: ImageTarget[],
+  imageSettings: ImageRedactionSettings | null,
 ): Promise<string> {
   const pdfBytes = await file.arrayBuffer();
-  const redactedPdf = await applyPseudonymisation(pdfBytes, targets, highlightColor);
+
+  const redactedPdf =
+    mode === "pseudonymise"
+      ? await applyPseudonymisation(pdfBytes, targets, highlightColor, imageTargets, imageSettings)
+      : await applyRedactions(pdfBytes, targets, permanent, imageTargets, imageSettings);
+
   return uint8ArrayToBase64(redactedPdf);
 }
