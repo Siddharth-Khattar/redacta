@@ -3,32 +3,174 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Redacta | AI Document Redaction</title>
+    <title>Redacta | Free AI-Powered PDF Redaction &amp; Pseudonymisation Tool</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#1c1c20" />
-    <meta name="description" content="AI-powered PDF redaction. Runs entirely in your browser. Your data never leaves your device." />
+    <meta name="description" content="Free AI-powered PDF redaction and pseudonymisation tool. Permanently redact or de-identify PII in text and images. No signup, no installation. Runs in your browser with your own API key. GDPR, HIPAA, and CCPA compliant." />
+    <link rel="canonical" href="https://redacta.khattar.dev/" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="Redacta | AI Document Redaction" />
-    <meta property="og:description" content="AI-powered PDF redaction that runs entirely in your browser. Your data never leaves your device." />
+    <meta property="og:site_name" content="Redacta" />
+    <meta property="og:title" content="Redacta | Free AI-Powered PDF Redaction &amp; Pseudonymisation" />
+    <meta property="og:description" content="Permanently redact or pseudonymise PII in PDFs using AI. No signup, no installation, no watermarks. Client-side processing with your own API key. Free and open source." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://redacta.khattar.dev/" />
+    <meta property="og:image" content="https://redacta.khattar.dev/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Redacta — Free AI-Powered PDF Redaction and Pseudonymisation Tool" />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Redacta | AI Document Redaction" />
-    <meta name="twitter:description" content="AI-powered PDF redaction. Runs entirely in your browser. Your data never leaves your device." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Redacta | AI PDF Redaction &amp; Pseudonymisation" />
+    <meta name="twitter:description" content="Free AI PDF redaction. Permanently redact or pseudonymise PII. No signup, no upload. BYOK, open source, GDPR/HIPAA compliant." />
+    <meta name="twitter:image" content="https://redacta.khattar.dev/og-image.png" />
+    <meta name="twitter:image:alt" content="Redacta — Free AI-Powered PDF Redaction and Pseudonymisation Tool" />
 
-    <!-- Structured Data -->
+    <!-- SoftwareApplication Schema -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Redacta",
+      "url": "https://redacta.khattar.dev/",
       "applicationCategory": "UtilitiesApplication",
+      "applicationSubCategory": "Document Processing",
       "operatingSystem": "Web",
-      "description": "AI-powered PDF redaction tool. Upload a document, describe what to remove, and AI identifies and redacts matching content, entirely in your browser.",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "featureList": ["AI-powered redaction", "Client-side processing", "PDF structure preservation", "Pseudonymisation mode"]
+      "description": "Free AI-powered PDF redaction and pseudonymisation (de-identification) tool. Permanently redact or pseudonymise personally identifiable information (PII) in text and images. Describe what to remove in plain language and AI identifies matching content automatically. No signup, no installation, no watermarks. All processing runs client-side in your browser using your own Gemini or OpenAI API key. Your documents are never uploaded to any server. Suitable for GDPR, HIPAA, and CCPA compliance.",
+      "image": "https://redacta.khattar.dev/og-image.png",
+      "screenshot": "https://redacta.khattar.dev/og-image.png",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "AI-powered automatic PII detection and redaction",
+        "Permanent irreversible redaction of text",
+        "AI-powered image redaction (photos, signatures, logos)",
+        "Document pseudonymisation and de-identification",
+        "100% client-side browser processing",
+        "Bring your own API key (Gemini, OpenAI)",
+        "No signup, no installation, no watermarks",
+        "PDF structure and layout preservation",
+        "Legal document and court filing redaction",
+        "CV and resume anonymisation for blind recruitment",
+        "GDPR, HIPAA, and CCPA/CPRA compliance",
+        "Subject access request (DSAR) processing",
+        "Healthcare and medical record de-identification",
+        "Financial document redaction",
+        "Free and open source"
+      ],
+      "softwareVersion": "0.1.0",
+      "isAccessibleForFree": true,
+      "creator": {
+        "@type": "Organization",
+        "name": "Redacta",
+        "url": "https://redacta.khattar.dev/",
+        "logo": "https://redacta.khattar.dev/favicon.svg"
+      }
+    }
+    </script>
+
+    <!-- WebSite Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Redacta",
+      "url": "https://redacta.khattar.dev/",
+      "description": "Free AI-powered PDF redaction and pseudonymisation tool. Permanently redact or de-identify PII in text and images using your own API key."
+    }
+    </script>
+
+    <!-- FAQPage Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Redacta?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Redacta is a free, open-source, AI-powered PDF redaction and pseudonymisation (de-identification) tool that runs entirely in your browser. You describe what to remove in plain language, and AI (Gemini or OpenAI) automatically detects and permanently redacts matching PII in text and images. No signup, no installation, no watermarks. Your documents never leave your device."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does AI PDF redaction work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Upload a PDF and describe what you want redacted (e.g. 'remove all personal names and addresses'). Redacta uses AI to analyse the document, identify matching content across text and images, and permanently redact or pseudonymise it. The redacted PDF preserves its original formatting and layout."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my data safe with Redacta?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Redacta processes everything client-side in your browser using JavaScript and WebAssembly (MuPDF). Your PDF files are never uploaded to any server. AI analysis runs via direct API calls from your browser to the AI provider using your own API key. There is no backend or middleman."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is document pseudonymisation?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pseudonymisation (also called de-identification) replaces personally identifiable information with realistic but fictional alternatives. For example, real names become fictional names, real addresses become fictional addresses. This preserves document readability while protecting privacy. It is commonly used for GDPR compliance, HIPAA de-identification, legal review, training data preparation, DSAR fulfilment, and blind recruitment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does bring your own API key (BYOK) mean?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Redacta does not have its own AI backend. You provide your own API key from Google Gemini or OpenAI. This means no middleman handles your data, no account to create on Redacta, and you only pay the AI provider's standard API rates, typically fractions of a cent per document."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can Redacta redact images in PDFs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Redacta detects and redacts sensitive images embedded in PDF documents, such as photos, signatures, logos, and screenshots. You can fill redacted image areas with a solid colour or add a descriptive label."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use Redacta for legal document redaction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Law firms and legal professionals use Redacta to redact privileged information, client names, case details, and confidential data from court filings, contracts, and discovery documents. The client-side architecture ensures sensitive legal documents are never transmitted to third-party servers."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use Redacta for CV or resume redaction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. HR teams and recruiters use Redacta to anonymise CVs and resumes by removing or pseudonymising names, photos, addresses, dates of birth, and other identifying information. This enables blind hiring practices and helps reduce unconscious bias in recruitment processes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Redacta free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Redacta is completely free and open source. The only cost is the AI API usage from your own Gemini or OpenAI API key, which is typically fractions of a cent per document."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is Redacta different from Adobe Acrobat redaction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Unlike Adobe Acrobat which requires manual selection of content to redact, Redacta uses AI to automatically detect PII based on your natural language description. It also offers pseudonymisation (replacing data with realistic fakes), runs entirely in your browser with no software installation, requires no signup or subscription, produces no watermarks, is completely free and open source, and supports bring-your-own-key (BYOK) for full data control."
+          }
+        }
+      ]
     }
     </script>
 
@@ -42,5 +184,85 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Fallback content for crawlers that do not execute JavaScript -->
+    <noscript>
+      <div style="max-width: 720px; margin: 0 auto; padding: 2rem; font-family: sans-serif; color: #e2dfd8;">
+        <h1>Redacta: Free AI-Powered PDF Redaction and Pseudonymisation Tool</h1>
+        <p>Redacta is a free, open-source, browser-based tool that uses AI to permanently redact and pseudonymise (de-identify) sensitive information in PDF documents. Describe what to remove in plain language, and AI automatically detects and redacts matching personally identifiable information (PII) across text and images. No signup, no installation, no watermarks. All processing happens locally in your browser using your own API key. Your files are never uploaded to any server.</p>
+
+        <h2>How It Works</h2>
+        <ol>
+          <li>Upload a PDF document.</li>
+          <li>Describe what to redact in plain language (e.g. "remove all personal names, email addresses, and phone numbers").</li>
+          <li>AI (Gemini or OpenAI, using your own API key) analyses the document and identifies matching content.</li>
+          <li>Choose to permanently redact (black out) or pseudonymise (replace with realistic fictional data).</li>
+          <li>Download the redacted PDF with original formatting preserved.</li>
+        </ol>
+
+        <h2>Key Features</h2>
+        <ul>
+          <li><strong>AI-Powered PII Detection and Redaction</strong>: Automatically identify and permanently redact personally identifiable information (names, email addresses, phone numbers, SSNs, addresses, account numbers) using natural language descriptions. No manual highlighting required.</li>
+          <li><strong>AI-Powered Image Redaction</strong>: Detect and redact sensitive images embedded in PDFs, including photos, signatures, logos, and screenshots. Redaction is permanent and irreversible.</li>
+          <li><strong>Document Pseudonymisation (De-identification)</strong>: Replace real names, addresses, and identifiers with realistic fictional alternatives instead of blacking them out. Ideal for GDPR compliance, HIPAA de-identification, legal review, training data, and blind recruitment.</li>
+          <li><strong>100% Client-Side Processing</strong>: Your documents never leave your browser. Processing uses JavaScript, WebAssembly (MuPDF), and direct API calls to AI providers. There is no backend server. No data is stored or transmitted.</li>
+          <li><strong>Bring Your Own API Key (BYOK)</strong>: Use your own Google Gemini or OpenAI API key. No account creation, no signup, no subscriptions, no watermarks. No middleman between you and the AI provider.</li>
+          <li><strong>PDF Structure Preservation</strong>: Redacted documents maintain their original formatting, layout, fonts, and page structure. True source-level redaction, not visual masking.</li>
+          <li><strong>Free and Open Source</strong>: Redacta is completely free with no usage limits. The only cost is AI API usage from your own key, typically fractions of a cent per document.</li>
+        </ul>
+
+        <h2>Use Cases</h2>
+
+        <h3>Legal Document Redaction</h3>
+        <p>Law firms and legal professionals use Redacta to redact privileged information, client names, case numbers, and confidential details from court filings, contracts, depositions, and discovery documents before sharing with opposing counsel or filing publicly. The client-side architecture ensures sensitive legal documents are never transmitted to third-party servers.</p>
+
+        <h3>CV and Resume Redaction for Blind Recruitment</h3>
+        <p>HR departments and recruitment agencies use Redacta to anonymise CVs and resumes by removing or pseudonymising candidate names, photos, addresses, dates of birth, university names, and other identifying information. This enables blind hiring practices and helps organisations reduce unconscious bias in their recruitment processes.</p>
+
+        <h3>GDPR, HIPAA, and CCPA Compliance</h3>
+        <p>Organisations use Redacta to pseudonymise and de-identify personal data in documents for GDPR compliance, HIPAA compliance, and CCPA/CPRA compliance. Common use cases include fulfilling data subject access requests (DSARs/SARs), preparing documents for third-party sharing, and anonymising training data. Pseudonymisation is specifically recognised under GDPR Article 4(5) as a data protection technique, and de-identification is required under the HIPAA Privacy Rule.</p>
+
+        <h3>Healthcare and Medical Record De-identification</h3>
+        <p>Healthcare providers and researchers use Redacta to de-identify and redact protected health information (PHI) and patient identifiers from medical records, clinical trial documents, research papers, and insurance forms. The client-side architecture ensures PHI is never transmitted to external servers, supporting HIPAA Safe Harbor de-identification requirements.</p>
+
+        <h3>Financial Document Redaction</h3>
+        <p>Financial institutions use Redacta to redact account numbers, transaction details, and personal financial information from statements, audit reports, and regulatory filings before sharing with external parties.</p>
+
+        <h3>Education and Research</h3>
+        <p>Universities and research institutions use Redacta to anonymise participant data in research papers, student records, and survey responses for ethical review boards and publication.</p>
+
+        <h2>Frequently Asked Questions</h2>
+
+        <h3>What is Redacta?</h3>
+        <p>Redacta is a free, open-source, AI-powered PDF redaction and pseudonymisation (de-identification) tool that runs entirely in your browser. You describe what to remove in plain language, and AI (Gemini or OpenAI) automatically detects and permanently redacts matching PII in text and images. No signup, no installation, no watermarks. Your documents never leave your device.</p>
+
+        <h3>How does AI PDF redaction work?</h3>
+        <p>Upload a PDF and describe what you want redacted (e.g. "remove all personal names and addresses"). Redacta uses AI to analyse the document, identify matching content across text and images, and permanently redact or pseudonymise it. The redacted PDF preserves its original formatting and layout.</p>
+
+        <h3>Is my data safe with Redacta?</h3>
+        <p>Yes. Redacta processes everything client-side in your browser using JavaScript and WebAssembly (MuPDF). Your PDF files are never uploaded to any server. AI analysis runs via direct API calls from your browser to the AI provider using your own API key. There is no backend or middleman.</p>
+
+        <h3>What is document pseudonymisation?</h3>
+        <p>Pseudonymisation (also called de-identification) replaces personally identifiable information with realistic but fictional alternatives. For example, real names become fictional names, real addresses become fictional addresses. This preserves document readability while protecting privacy. It is commonly used for GDPR compliance, HIPAA de-identification, legal review, training data preparation, DSAR fulfilment, and blind recruitment.</p>
+
+        <h3>What does "bring your own API key" (BYOK) mean?</h3>
+        <p>Redacta does not have its own AI backend. You provide your own API key from Google Gemini or OpenAI. This means no middleman handles your data, no account to create on Redacta, and you only pay the AI provider's standard API rates, typically fractions of a cent per document.</p>
+
+        <h3>Can Redacta redact images in PDFs?</h3>
+        <p>Yes. Redacta detects and redacts sensitive images embedded in PDF documents, such as photos, signatures, logos, and screenshots. You can fill redacted image areas with a solid colour or add a descriptive label.</p>
+
+        <h3>Can I use Redacta for legal document redaction?</h3>
+        <p>Yes. Law firms and legal professionals use Redacta to redact privileged information, client names, case details, and confidential data from court filings, contracts, and discovery documents. The client-side architecture ensures sensitive legal documents are never transmitted to third-party servers.</p>
+
+        <h3>Can I use Redacta for CV or resume redaction?</h3>
+        <p>Yes. HR teams and recruiters use Redacta to anonymise CVs and resumes by removing or pseudonymising names, photos, addresses, dates of birth, and other identifying information. This enables blind hiring practices and helps reduce unconscious bias in recruitment processes.</p>
+
+        <h3>Is Redacta free?</h3>
+        <p>Yes. Redacta is completely free and open source. The only cost is the AI API usage from your own Gemini or OpenAI API key, which is typically fractions of a cent per document.</p>
+
+        <h3>How is Redacta different from Adobe Acrobat redaction?</h3>
+        <p>Unlike Adobe Acrobat which requires manual selection of content to redact, Redacta uses AI to automatically detect PII based on your natural language description. It also offers pseudonymisation (replacing data with realistic fakes), runs entirely in your browser with no software installation, requires no signup or subscription, produces no watermarks, is completely free and open source, and supports bring-your-own-key (BYOK) for full data control.</p>
+      </div>
+    </noscript>
   </body>
 </html>
