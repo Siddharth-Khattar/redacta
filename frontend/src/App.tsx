@@ -1,10 +1,9 @@
-// ABOUTME: Root application component with hash-based routing via wouter.
+// ABOUTME: Root application component with history-based routing via wouter.
 // ABOUTME: Manages theme, API key modal, and route transitions between upload and workspace.
 
 import { AnimatePresence } from "motion/react";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { Redirect, Router, useLocation } from "wouter";
-import { useHashLocation } from "wouter/use-hash-location";
+import { Redirect, useLocation } from "wouter";
 import { ApiKeyModal } from "./components/ApiKeyModal";
 import { Header } from "./components/Header";
 import type { ProviderId } from "./engine/providers/types";
@@ -51,6 +50,15 @@ function AppShell() {
     document.documentElement.classList.toggle("light", theme === "light");
     localStorage.setItem("redacta-theme", theme);
   }, [theme]);
+
+  // Per-route document title for SEO differentiation
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      "/": "Free AI-Powered PDF Redaction & Pseudonymisation Tool | Redacta",
+      "/workspace": "Redact PDF — Workspace | Redacta",
+    };
+    document.title = titles[location] ?? titles["/"]!;
+  }, [location]);
 
   const handleToggleTheme = useCallback(() => {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
@@ -116,9 +124,5 @@ function AppShell() {
 }
 
 export default function App() {
-  return (
-    <Router hook={useHashLocation}>
-      <AppShell />
-    </Router>
-  );
+  return <AppShell />;
 }
