@@ -1,7 +1,7 @@
 // ABOUTME: Redaction prompt input panel with provider/model/thinking selectors and permanent toggle.
 // ABOUTME: Clean form layout with warm colors and readable text sizes.
 
-import { ChevronDown, ChevronUp, Info } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import type { HighlightColor, ProcessingMode } from "../api/redaction";
@@ -61,7 +61,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
 
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<ProcessingMode>("redact");
-  const [permanent, setPermanent] = useState(false);
+  const permanent = true;
   const [redactImages, setRedactImages] = useState(false);
   const [highlightColor, setHighlightColor] = useState<HighlightColor>("white");
   const [selectedProvider, setSelectedProvider] = useState<ProviderId>(initialProvider);
@@ -69,7 +69,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
   const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(
     getDefaultThinkingLevel(initialModel.id),
   );
-  const [showTooltip, setShowTooltip] = useState(false);
+
   const [showModelSettings, setShowModelSettings] = useState(false);
 
   const providerModels = getModelsForProvider(selectedProvider);
@@ -301,63 +301,6 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
               )}
             </AnimatePresence>
           </div>
-
-          {/* Permanent toggle — redact mode only */}
-          {mode === "redact" && (
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 relative">
-                  <p className="text-xs font-medium text-text-dim">Permanent removal</p>
-                  <button
-                    type="button"
-                    className="text-text-faint hover:text-text-dim transition-colors"
-                    onMouseEnter={() => setShowTooltip(true)}
-                    onMouseLeave={() => setShowTooltip(false)}
-                    onClick={() => setShowTooltip((v) => !v)}
-                    aria-label="More info about permanent removal"
-                  >
-                    <Info className="w-3.5 h-3.5" />
-                  </button>
-                  {showTooltip && (
-                    <div className="absolute bottom-full left-0 mb-2 w-72 p-3.5 rounded-xl bg-surface border border-border shadow-2xl text-xs text-text-sub leading-relaxed z-20">
-                      <p className="mb-2">
-                        <strong className="text-text">Visual covering</strong> (default) draws black
-                        boxes over text. The underlying data stays in the PDF and could be
-                        recovered.
-                      </p>
-                      <p>
-                        <strong className="text-redact">Permanent removal</strong> deletes the text
-                        data entirely. Characters are destroyed, not hidden. This cannot be undone.
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={permanent}
-                  onClick={() => setPermanent(!permanent)}
-                  className={`
-                    relative w-10 h-5.5 rounded-full transition-colors duration-200
-                    ${permanent ? "bg-redact" : "bg-border"}
-                  `}
-                >
-                  <span
-                    className={`
-                      absolute top-0.75 left-0.75 w-4 h-4 rounded-full bg-white
-                      transition-transform duration-200 shadow-sm
-                      ${permanent ? "translate-x-4.5" : "translate-x-0"}
-                    `}
-                  />
-                </button>
-              </div>
-              {permanent && (
-                <p className="text-xs text-redact/70 mt-1.5 leading-relaxed">
-                  Text beneath redactions will be permanently destroyed.
-                </p>
-              )}
-            </div>
-          )}
 
           {/* Highlight color picker — pseudonymise mode only */}
           {mode === "pseudonymise" && (
