@@ -8,15 +8,21 @@ interface HeaderProps {
   theme: "dark" | "light";
   onToggleTheme: () => void;
   onApiKeyClick: () => void;
+  onLogoClick: () => void;
 }
 
-export function Header({ theme, onToggleTheme, onApiKeyClick }: HeaderProps) {
+export function Header({ theme, onToggleTheme, onApiKeyClick, onLogoClick }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 h-14 border-b border-border bg-bg/80 backdrop-blur-md z-20 relative">
-      <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onLogoClick}
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        aria-label="Back to home"
+      >
         <RedactaLogo size={22} className="text-text" />
         <span className="text-base font-semibold text-text tracking-tight">Redacta</span>
-      </div>
+      </button>
 
       <div className="flex items-center gap-1">
         <button
