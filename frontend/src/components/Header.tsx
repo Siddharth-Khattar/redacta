@@ -7,11 +7,10 @@ import { RedactaLogo } from "./RedactaLogo";
 interface HeaderProps {
   theme: "dark" | "light";
   onToggleTheme: () => void;
-  apiKeySet: boolean;
   onApiKeyClick: () => void;
 }
 
-export function Header({ theme, onToggleTheme, apiKeySet, onApiKeyClick }: HeaderProps) {
+export function Header({ theme, onToggleTheme, onApiKeyClick }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 h-14 border-b border-border bg-bg/80 backdrop-blur-md z-20 relative">
       <div className="flex items-center gap-2">
@@ -20,17 +19,15 @@ export function Header({ theme, onToggleTheme, apiKeySet, onApiKeyClick }: Heade
       </div>
 
       <div className="flex items-center gap-1">
-        {apiKeySet && (
-          <button
-            type="button"
-            onClick={onApiKeyClick}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-text-dim hover:text-redact hover:bg-surface transition-colors"
-            aria-label="API keys"
-            title="API keys"
-          >
-            <KeyRound className="w-4 h-4" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onApiKeyClick}
+          className="flex items-center justify-center w-8 h-8 rounded-lg text-text-dim hover:text-redact hover:bg-surface transition-colors"
+          aria-label="API keys"
+          title="API keys"
+        >
+          <KeyRound className="w-4 h-4" />
+        </button>
         <button
           type="button"
           onClick={onToggleTheme}

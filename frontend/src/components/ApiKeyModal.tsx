@@ -1,7 +1,7 @@
 // ABOUTME: Modal dialog for managing per-provider API keys (add, change, remove).
 // ABOUTME: Accessible from the header at any point; supports all registered providers.
 
-import { Check, KeyRound, Loader2, Plus, Trash2, X } from "lucide-react";
+import { Check, KeyRound, Loader2, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getProvider, PROVIDERS } from "../engine/providers/registry";
 import type { ProviderConfig, ProviderId } from "../engine/providers/types";
@@ -11,7 +11,8 @@ interface ApiKeyModalProps {
   keys: ProviderKeys;
   onKeyChanged: (provider: ProviderId, key: string) => void;
   onKeyClear: (provider: ProviderId) => void;
-  onClose: () => void;
+  /** When omitted the modal becomes non-dismissible (used when no keys are configured). */
+  onClose?: () => void;
 }
 
 /** Mask an API key, showing only the first 4 and last 4 characters. */
@@ -78,41 +79,34 @@ function ProviderRow({
     }
   }, [state.editing]);
 
+  const showInput = state.editing || !isConfigured;
+
   return (
     <div className="space-y-3">
       {/* Provider header row */}
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <span className="block text-sm font-medium text-text">{config.name}</span>
-          {isConfigured && !state.editing ? (
+          {isConfigured && !state.editing && (
             <span className="block text-xs text-text-dim font-mono mt-0.5">
               {maskKey(currentKey)}
             </span>
-          ) : !isConfigured && !state.editing ? (
-            <span className="block text-xs text-text-faint mt-0.5">Not configured</span>
-          ) : null}
+          )}
         </div>
 
-        {!state.editing && (
+        {isConfigured && !state.editing && (
           <button
             type="button"
             onClick={onStartEdit}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-redact hover:bg-surface transition-colors"
           >
-            {isConfigured ? (
-              "Change"
-            ) : (
-              <>
-                <Plus className="w-3 h-3" />
-                Add
-              </>
-            )}
+            Change
           </button>
         )}
       </div>
 
-      {/* Inline edit form */}
-      {state.editing && (
+      {/* Input — always visible when unconfigured, toggled via edit for configured */}
+      {showInput && (
         <div className="space-y-2.5">
           <div>
             <input
@@ -148,13 +142,15 @@ function ProviderRow({
                 </>
               )}
             </button>
-            <button
-              type="button"
-              onClick={onCancelEdit}
-              className="px-3 py-2 rounded-lg text-xs font-medium text-text-dim hover:text-text hover:bg-surface transition-colors"
-            >
-              Cancel
-            </button>
+            {isConfigured && (
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="px-3 py-2 rounded-lg text-xs font-medium text-text-dim hover:text-text hover:bg-surface transition-colors"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -182,7 +178,7 @@ export function ApiKeyModal({ keys, onKeyChanged, onKeyClear, onClose }: ApiKeyM
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
-      if (e.target === backdropRef.current) onClose();
+      if (onClose && e.target === backdropRef.current) onClose();
     },
     [onClose],
   );
@@ -255,7 +251,7 @@ export function ApiKeyModal({ keys, onKeyChanged, onKeyClear, onClose }: ApiKeyM
       aria-label="API Key Settings"
       onClick={handleBackdropClick}
       onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
+        if (e.key === "Escape" && onClose) onClose();
       }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
     >
@@ -266,20 +262,22 @@ export function ApiKeyModal({ keys, onKeyChanged, onKeyClear, onClose }: ApiKeyM
             <KeyRound className="w-4 h-4 text-redact" />
             <h2 className="text-sm font-semibold text-text">API Key Settings</h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-text-dim hover:text-text hover:bg-surface transition-colors"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center justify-center w-7 h-7 rounded-lg text-text-dim hover:text-text hover:bg-surface transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-5 divide-y divide-border">
+        <div className="px-6 py-5 space-y-7">
           {PROVIDERS.map((config) => (
-            <div key={config.id} className={config.id !== "gemini" ? "pt-5" : ""}>
+            <div key={config.id}>
               <ProviderRow
                 config={config}
                 currentKey={keys[config.id]}

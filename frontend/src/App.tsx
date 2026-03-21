@@ -1,5 +1,5 @@
 // ABOUTME: Root application component with state-machine driven flow.
-// ABOUTME: Manages transitions between API key gate, upload, workspace, processing, result, and error states.
+// ABOUTME: Manages transitions between upload, workspace, processing, result, and error states.
 
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -12,7 +12,6 @@ import {
   reapplySettings,
   redactPdf,
 } from "./api/redaction";
-import { ApiKeyGate } from "./components/ApiKeyGate";
 import { ApiKeyModal } from "./components/ApiKeyModal";
 import { DownloadBar } from "./components/DownloadBar";
 import { Header } from "./components/Header";
@@ -38,7 +37,6 @@ function getInitialTheme(): Theme {
 
 export default function App() {
   const { keys, hasAnyKey, configuredProviders, setKey, clearKey } = useProviderKeys();
-  const [gatePassed, setGatePassed] = useState(hasAnyKey);
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [state, setState] = useState<AppState>("upload");
   const [lastMode, setLastMode] = useState<ProcessingMode>("redact");
@@ -54,18 +52,14 @@ export default function App() {
     localStorage.setItem("redacta-theme", theme);
   }, [theme]);
 
-  // Reset to gate when all keys are removed (e.g. via the modal)
+  // Show API key modal when in workspace without any configured keys
   useEffect(() => {
-    if (!hasAnyKey && gatePassed) {
+    if (state !== "upload" && file && !hasAnyKey) {
       abortControllerRef.current?.abort();
-      setGatePassed(false);
-      setState("upload");
-      setFile(null);
-      setResult(null);
-      setErrorMessage(null);
-      setShowApiKeyModal(false);
+      if (state === "processing") setState("workspace");
+      setShowApiKeyModal(true);
     }
-  }, [hasAnyKey, gatePassed]);
+  }, [state, file, hasAnyKey]);
 
   const handleToggleTheme = useCallback(() => {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
@@ -200,25 +194,11 @@ export default function App() {
       <Header
         theme={theme}
         onToggleTheme={handleToggleTheme}
-        apiKeySet={hasAnyKey}
         onApiKeyClick={() => setShowApiKeyModal(true)}
       />
 
       <AnimatePresence mode="wait">
-        {!gatePassed && (
-          <motion.div
-            key="api-key-gate"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col"
-          >
-            <ApiKeyGate onKeysConfigured={() => setGatePassed(true)} setKey={setKey} />
-          </motion.div>
-        )}
-
-        {gatePassed && state === "upload" && (
+        {state === "upload" && (
           <motion.div
             key="upload"
             initial={{ opacity: 0 }}
@@ -231,7 +211,7 @@ export default function App() {
           </motion.div>
         )}
 
-        {gatePassed && isPostUpload && (
+        {isPostUpload && (
           <motion.div
             key="workspace-area"
             initial={{ opacity: 0 }}
@@ -253,7 +233,7 @@ export default function App() {
               }
               right={
                 <>
-                  {state === "workspace" && (
+                  {state === "workspace" && configuredProviders.length > 0 && (
                     <PromptPanel
                       configuredProviders={configuredProviders}
                       onSubmit={handleSubmit}
@@ -309,12 +289,12 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {showApiKeyModal && hasAnyKey && (
+      {showApiKeyModal && (
         <ApiKeyModal
           keys={keys}
           onKeyChanged={handleKeyChanged}
           onKeyClear={clearKey}
-          onClose={() => setShowApiKeyModal(false)}
+          onClose={hasAnyKey ? () => setShowApiKeyModal(false) : undefined}
         />
       )}
     </div>
