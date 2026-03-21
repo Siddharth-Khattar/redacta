@@ -58,6 +58,7 @@ export function ResultPanel({ result, onRerender }: ResultPanelProps) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [showMapping, setShowMapping] = useState(false);
   const [showImageSettings, setShowImageSettings] = useState(false);
+  const [showReasoning, setShowReasoning] = useState(false);
   const [rerendering, setRerendering] = useState(false);
 
   const isPseudo = result.mode === "pseudonymise";
@@ -176,6 +177,15 @@ export function ResultPanel({ result, onRerender }: ResultPanelProps) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Reasoning panel */}
+      {result.reasoning && showReasoning && (
+        <div className="border-t border-border bg-raised px-5 py-3 max-h-48 overflow-y-auto">
+          <p className="text-sm text-text-sub leading-relaxed whitespace-pre-wrap">
+            {result.reasoning}
+          </p>
         </div>
       )}
 
@@ -314,11 +324,17 @@ export function ResultPanel({ result, onRerender }: ResultPanelProps) {
         )}
 
         {result.reasoning && (
-          <span className="text-sm text-text-faint truncate ml-2">{result.reasoning}</span>
+          <button
+            type="button"
+            onClick={() => setShowReasoning((v) => !v)}
+            className="text-sm text-text-faint truncate ml-2 hover:text-text-sub transition-colors text-left cursor-pointer"
+          >
+            {result.reasoning}
+          </button>
         )}
 
         {/* Right-side buttons */}
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-3 shrink-0">
           {hasImages && (
             <button
               type="button"
