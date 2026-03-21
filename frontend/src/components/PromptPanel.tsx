@@ -1,7 +1,8 @@
 // ABOUTME: Redaction prompt input panel with provider/model/thinking selectors and permanent toggle.
 // ABOUTME: Clean form layout with warm colors and readable text sizes.
 
-import { Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Info } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import type { HighlightColor, ProcessingMode } from "../api/redaction";
 import {
@@ -69,6 +70,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
     getDefaultThinkingLevel(initialModel.id),
   );
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showModelSettings, setShowModelSettings] = useState(false);
 
   const providerModels = getModelsForProvider(selectedProvider);
   const modelDef = getModelDefinition(selectedModel);
@@ -117,7 +119,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
 
   return (
     <div className="flex-1 flex flex-col p-6 overflow-y-auto">
-      <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full">
+      <div className="flex-1 flex flex-col max-w-sm mx-auto w-full pt-12">
         {/* Heading */}
         <div className="mb-5">
           <h3 className="text-xl font-semibold text-text mb-1 tracking-tight">
@@ -177,84 +179,127 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
             </div>
           </div>
 
-          {/* Provider */}
+          {/* Model settings — summary line + collapsible panel */}
           <div>
-            <p className="text-xs font-medium text-text-dim mb-2">Provider</p>
-            <div className="flex gap-1.5">
-              {configuredProviders.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => handleProviderChange(p)}
-                  className={`
-                    flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
-                    ${
-                      selectedProvider === p
-                        ? "bg-surface text-text shadow-sm ring-1 ring-border"
-                        : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
-                    }
-                  `}
-                >
-                  {PROVIDER_LABELS[p]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Model */}
-          <div>
-            <p className="text-xs font-medium text-text-dim mb-2">Model</p>
-            <div className="flex gap-1.5">
-              {providerModels.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => handleModelChange(m.id)}
-                  className={`
-                    flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
-                    ${
-                      selectedModel === m.id
-                        ? "bg-surface text-text shadow-sm ring-1 ring-border"
-                        : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
-                    }
-                  `}
-                >
-                  {shortModelLabel(m.label, selectedProvider)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Thinking */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <p className="text-xs font-medium text-text-dim">Thinking</p>
-              {!supportsThinking && (
-                <span className="text-[11px] text-text-faint">— not available for this model</span>
-              )}
-            </div>
-            <div
-              className={`flex gap-1.5 ${!supportsThinking ? "opacity-35 pointer-events-none" : ""}`}
+            <button
+              type="button"
+              onClick={() => setShowModelSettings((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover transition-colors"
             >
-              {supportedLevels.map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => setThinkingLevel(level)}
-                  disabled={!supportsThinking}
-                  className={`
-                    flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
-                    ${
-                      thinkingLevel === level && supportsThinking
-                        ? "bg-surface text-text shadow-sm ring-1 ring-border"
-                        : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
-                    }
-                  `}
+              <span className="text-xs text-text-sub">
+                {PROVIDER_LABELS[selectedProvider]}
+                <span className="text-text-faint mx-1.5">&middot;</span>
+                {modelDef?.label ?? selectedModel}
+                {supportsThinking && (
+                  <>
+                    <span className="text-text-faint mx-1.5">&middot;</span>
+                    {thinkingLevel.charAt(0).toUpperCase() + thinkingLevel.slice(1)} thinking
+                  </>
+                )}
+              </span>
+              {showModelSettings ? (
+                <ChevronUp className="w-3.5 h-3.5 text-text-faint" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 text-text-faint" />
+              )}
+            </button>
+
+            <AnimatePresence initial={false}>
+              {showModelSettings && (
+                <motion.div
+                  key="model-settings"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className="overflow-hidden"
                 >
-                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                </button>
-              ))}
-            </div>
+                  <div className="pt-2 pb-1 space-y-3 pl-1">
+                    {/* Provider */}
+                    <div>
+                      <p className="text-xs font-medium text-text-dim mb-2">Provider</p>
+                      <div className="flex gap-1.5">
+                        {configuredProviders.map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => handleProviderChange(p)}
+                            className={`
+                              flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                              ${
+                                selectedProvider === p
+                                  ? "bg-surface text-text shadow-sm ring-1 ring-border"
+                                  : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
+                              }
+                            `}
+                          >
+                            {PROVIDER_LABELS[p]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Model */}
+                    <div>
+                      <p className="text-xs font-medium text-text-dim mb-2">Model</p>
+                      <div className="flex gap-1.5">
+                        {providerModels.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => handleModelChange(m.id)}
+                            className={`
+                              flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                              ${
+                                selectedModel === m.id
+                                  ? "bg-surface text-text shadow-sm ring-1 ring-border"
+                                  : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
+                              }
+                            `}
+                          >
+                            {shortModelLabel(m.label, selectedProvider)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Thinking */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-xs font-medium text-text-dim">Thinking</p>
+                        {!supportsThinking && (
+                          <span className="text-[11px] text-text-faint">
+                            — not available for this model
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className={`flex gap-1.5 ${!supportsThinking ? "opacity-35 pointer-events-none" : ""}`}
+                      >
+                        {supportedLevels.map((level) => (
+                          <button
+                            key={level}
+                            type="button"
+                            onClick={() => setThinkingLevel(level)}
+                            disabled={!supportsThinking}
+                            className={`
+                              flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                              ${
+                                thinkingLevel === level && supportsThinking
+                                  ? "bg-surface text-text shadow-sm ring-1 ring-border"
+                                  : "text-text-dim hover:text-text-sub hover:bg-surface-hover"
+                              }
+                            `}
+                          >
+                            {level.charAt(0).toUpperCase() + level.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Permanent toggle — redact mode only */}
