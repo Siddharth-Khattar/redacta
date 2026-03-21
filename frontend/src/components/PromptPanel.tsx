@@ -3,7 +3,7 @@
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { HighlightColor, ProcessingMode } from "../api/redaction";
 import {
   getDefaultThinkingLevel,
@@ -11,6 +11,31 @@ import {
   getModelsForProvider,
 } from "../engine/providers/registry";
 import type { ProviderId, ThinkingLevel } from "../engine/providers/types";
+
+const SETTINGS_KEY = "redacta-settings";
+
+interface StoredSettings {
+  mode?: ProcessingMode;
+  provider?: ProviderId;
+  model?: string;
+  thinkingLevel?: ThinkingLevel;
+  highlightColor?: HighlightColor;
+  redactImages?: boolean;
+}
+
+function loadSettings(): StoredSettings {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as StoredSettings;
+  } catch {
+    return {};
+  }
+}
+
+function saveSettings(settings: StoredSettings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
 
 const HIGHLIGHT_COLORS: { value: HighlightColor; bg: string; ring: string }[] = [
   { value: "white", bg: "bg-white", ring: "ring-white" },
@@ -55,22 +80,53 @@ interface PromptPanelProps {
 }
 
 export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps) {
-  const initialProvider = configuredProviders[0]!;
-  const initialModels = getModelsForProvider(initialProvider);
-  const initialModel = initialModels[0]!;
+  const fallbackProvider = configuredProviders[0]!;
+  const stored = loadSettings();
+
+  // Resolve provider: use stored if still configured, otherwise fall back
+  const resolvedProvider =
+    stored.provider && configuredProviders.includes(stored.provider)
+      ? stored.provider
+      : fallbackProvider;
+
+  // Resolve model: use stored if still available for the provider, otherwise first model
+  const resolvedModels = getModelsForProvider(resolvedProvider);
+  const resolvedModel =
+    stored.model && resolvedModels.some((m) => m.id === stored.model)
+      ? stored.model
+      : resolvedModels[0]!.id;
+
+  // Resolve thinking level: use stored if valid for the model, otherwise default
+  const resolvedModelDef = getModelDefinition(resolvedModel);
+  const resolvedThinking: ThinkingLevel =
+    stored.thinkingLevel && (resolvedModelDef?.thinkingLevels ?? []).includes(stored.thinkingLevel)
+      ? stored.thinkingLevel
+      : getDefaultThinkingLevel(resolvedModel);
 
   const [prompt, setPrompt] = useState("");
-  const [mode, setMode] = useState<ProcessingMode>("redact");
+  const [mode, setMode] = useState<ProcessingMode>(stored.mode ?? "redact");
   const permanent = true;
-  const [redactImages, setRedactImages] = useState(false);
-  const [highlightColor, setHighlightColor] = useState<HighlightColor>("white");
-  const [selectedProvider, setSelectedProvider] = useState<ProviderId>(initialProvider);
-  const [selectedModel, setSelectedModel] = useState(initialModel.id);
-  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(
-    getDefaultThinkingLevel(initialModel.id),
+  const [redactImages, setRedactImages] = useState(stored.redactImages ?? false);
+  const [highlightColor, setHighlightColor] = useState<HighlightColor>(
+    stored.highlightColor ?? "white",
   );
+  const [selectedProvider, setSelectedProvider] = useState<ProviderId>(resolvedProvider);
+  const [selectedModel, setSelectedModel] = useState(resolvedModel);
+  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(resolvedThinking);
 
   const [showModelSettings, setShowModelSettings] = useState(false);
+
+  // Persist settings on change
+  useEffect(() => {
+    saveSettings({
+      mode,
+      provider: selectedProvider,
+      model: selectedModel,
+      thinkingLevel,
+      highlightColor,
+      redactImages,
+    });
+  }, [mode, selectedProvider, selectedModel, thinkingLevel, highlightColor, redactImages]);
 
   const providerModels = getModelsForProvider(selectedProvider);
   const modelDef = getModelDefinition(selectedModel);
