@@ -1,7 +1,6 @@
 // ABOUTME: Google Gemini provider implementation using @google/genai SDK.
 // ABOUTME: Handles both thinkingBudget (2.5) and thinkingLevel (3.x) configurations.
 
-import { ThinkingLevel as GeminiThinkingLevel, GoogleGenAI } from "@google/genai";
 import { buildUserMessage, getSystemInstruction } from "../prompts";
 import {
   type ProcessingMode,
@@ -12,6 +11,17 @@ import {
 import { DEFAULT_RETRY_CONFIG, withRetry } from "./shared";
 import type { RedactionProvider } from "./types";
 
+type GenAIModule = typeof import("@google/genai");
+
+let cachedGenAI: GenAIModule | null = null;
+
+/** Lazily load the @google/genai SDK (only pulled in when a Gemini call is made). */
+async function loadGenAI(): Promise<GenAIModule> {
+  if (cachedGenAI) return cachedGenAI;
+  cachedGenAI = await import("@google/genai");
+  return cachedGenAI;
+}
+
 /** Token budget mapping for Gemini 2.5 models (thinkingBudget param) */
 const THINKING_BUDGET_MAP: Record<string, number> = {
   low: 1024,
@@ -20,14 +30,18 @@ const THINKING_BUDGET_MAP: Record<string, number> = {
 };
 
 /** Map UI thinking levels to SDK ThinkingLevel enum for Gemini 3.x models */
-function toGeminiThinkingLevel(level: string): GeminiThinkingLevel {
-  const map: Record<string, GeminiThinkingLevel> = {
-    minimal: GeminiThinkingLevel.MINIMAL,
-    low: GeminiThinkingLevel.LOW,
-    medium: GeminiThinkingLevel.MEDIUM,
-    high: GeminiThinkingLevel.HIGH,
+function toGeminiThinkingLevel(
+  level: string,
+  genai: GenAIModule,
+): import("@google/genai").ThinkingLevel {
+  const { ThinkingLevel } = genai;
+  const map: Record<string, import("@google/genai").ThinkingLevel> = {
+    minimal: ThinkingLevel.MINIMAL,
+    low: ThinkingLevel.LOW,
+    medium: ThinkingLevel.MEDIUM,
+    high: ThinkingLevel.HIGH,
   };
-  return map[level] ?? GeminiThinkingLevel.LOW;
+  return map[level] ?? ThinkingLevel.LOW;
 }
 
 /** Extract a human-readable message from Gemini's nested JSON error structure. */
@@ -87,14 +101,15 @@ export class GeminiProvider implements RedactionProvider {
     thinkingLevel: string,
     mode: ProcessingMode,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }> {
-    const ai = new GoogleGenAI({ apiKey });
+    const genai = await loadGenAI();
+    const ai = new genai.GoogleGenAI({ apiKey });
     const userMessage = buildUserMessage(mode, pdfText, redactionPrompt);
 
     // Gemini 2.5 uses thinkingBudget (integer); 3.x uses thinkingLevel (enum)
     const is25 = model.startsWith("gemini-2");
     const thinkingConfig = is25
       ? { thinkingBudget: THINKING_BUDGET_MAP[thinkingLevel] ?? 1024 }
-      : { thinkingLevel: toGeminiThinkingLevel(thinkingLevel) };
+      : { thinkingLevel: toGeminiThinkingLevel(thinkingLevel, genai) };
 
     try {
       return await withRetry(
@@ -159,7 +174,8 @@ export class GeminiProvider implements RedactionProvider {
 
   async validateApiKey(apiKey: string): Promise<boolean> {
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      const genai = await loadGenAI();
+      const ai = new genai.GoogleGenAI({ apiKey });
       await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: "Say OK",

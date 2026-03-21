@@ -2,7 +2,7 @@
 // ABOUTME: Manages theme, API key modal, and route transitions between upload and workspace.
 
 import { AnimatePresence } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Redirect, Router, useLocation } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import { ApiKeyModal } from "./components/ApiKeyModal";
@@ -11,7 +11,25 @@ import type { ProviderId } from "./engine/providers/types";
 import { useProviderKeys } from "./hooks/useProviderKeys";
 import { clearPdf } from "./lib/pdf-store";
 import { LandingPage } from "./pages/LandingPage";
-import { WorkspacePage } from "./pages/WorkspacePage";
+
+const workspaceImport = () =>
+  import("./pages/WorkspacePage").then((m) => ({ default: m.WorkspacePage }));
+
+const WorkspacePage = lazy(workspaceImport);
+
+// Prefetch the workspace chunk as soon as the app mounts so it's cached by the
+// time the user uploads a PDF and navigates. requestIdleCallback defers the
+// fetch until the browser is idle, avoiding any impact on initial paint.
+if (typeof window !== "undefined") {
+  const prefetch = () => {
+    workspaceImport();
+  };
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(prefetch);
+  } else {
+    setTimeout(prefetch, 200);
+  }
+}
 
 type Theme = "dark" | "light";
 
@@ -72,14 +90,16 @@ function AppShell() {
       <AnimatePresence mode="wait">
         {location === "/" && <LandingPage key="landing" />}
         {location === "/workspace" && (
-          <WorkspacePage
-            key="workspace"
-            keys={keys}
-            hasAnyKey={hasAnyKey}
-            configuredProviders={configuredProviders}
-            clearKey={clearKey}
-            onRequestApiKeyModal={handleRequestApiKeyModal}
-          />
+          <Suspense fallback={null}>
+            <WorkspacePage
+              key="workspace"
+              keys={keys}
+              hasAnyKey={hasAnyKey}
+              configuredProviders={configuredProviders}
+              clearKey={clearKey}
+              onRequestApiKeyModal={handleRequestApiKeyModal}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
 
