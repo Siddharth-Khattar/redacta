@@ -146,6 +146,9 @@ html.light .noise::before {
 .stagger-3 {
   animation: fade-in-up 0.5s ease-out 0.25s both;
 }
+.stagger-4 {
+  animation: fade-in-up 0.5s ease-out 0.35s both;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

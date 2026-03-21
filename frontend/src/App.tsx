@@ -10,7 +10,7 @@ import { Header } from "./components/Header";
 import type { ProviderId } from "./engine/providers/types";
 import { useProviderKeys } from "./hooks/useProviderKeys";
 import { clearPdf } from "./lib/pdf-store";
-import { UploadPage } from "./pages/UploadPage";
+import { LandingPage } from "./pages/LandingPage";
 import { WorkspacePage } from "./pages/WorkspacePage";
 
 type Theme = "dark" | "light";
@@ -70,7 +70,7 @@ function AppShell() {
       />
 
       <AnimatePresence mode="wait">
-        {location === "/" && <UploadPage key="upload" />}
+        {location === "/" && <LandingPage key="landing" />}
         {location === "/workspace" && (
           <WorkspacePage
             key="workspace"
