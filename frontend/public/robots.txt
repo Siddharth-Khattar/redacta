@@ -45,5 +45,3 @@ Allow: /
 
 User-agent: Meta-ExternalAgent
 Allow: /
-
-Sitemap: https://redacta.khattar.dev/sitemap.xml

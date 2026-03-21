@@ -80,7 +80,7 @@ const svg = `
   </g>
 
   <!-- URL at bottom -->
-  <text x="${WIDTH / 2}" y="568" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="15" fill="#706c68">redacta.khattar.dev</text>
+  <text x="${WIDTH / 2}" y="568" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="15" fill="#706c68">github.com/Siddharth-Khattar/redacta</text>
 
   <!-- Bottom accent line -->
   <rect x="0" y="${HEIGHT - 3}" width="${WIDTH}" height="3" fill="url(#accent-line)"/>

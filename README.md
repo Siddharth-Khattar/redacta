@@ -13,9 +13,8 @@ Your documents never leave your device.
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![React](https://img.shields.io/badge/React-19-58c4dc?style=flat-square&logo=react&logoColor=white)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-6-646cff?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
-[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-f38020?style=flat-square&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
 
-[Live App](https://redacta.khattar.dev) · [Report Bug](https://github.com/Siddharth-Khattar/redacta/issues)
+[Report Bug](https://github.com/Siddharth-Khattar/redacta/issues)
 
 <br />
 
@@ -142,7 +141,7 @@ graph TD
     AI -->|"HTTPS"| GEMAPI["Gemini API"]
     AI -->|"HTTPS"| OAIAPI["OpenAI API"]
     PRC -->|"HTTPS"| ORAPI["OpenRouter API"]
-    Browser -->|"Static files"| CF["Cloudflare Workers"]
+    Browser -->|"Static files"| HOST["Any Static Host"]
 
     style Browser fill:#1c1c20,stroke:#30303a,color:#e2dfd8
     style Engine fill:#222228,stroke:#30303a,color:#e2dfd8
@@ -153,10 +152,10 @@ graph TD
     style GEMAPI fill:#4285f4,stroke:#4285f4,color:#fff
     style OAIAPI fill:#10a37f,stroke:#10a37f,color:#fff
     style ORAPI fill:#30303a,stroke:#30303a,color:#e2dfd8
-    style CF fill:#f38020,stroke:#f38020,color:#fff
+    style HOST fill:#30303a,stroke:#30303a,color:#e2dfd8
 ```
 
-The entire application compiles to static files. Cloudflare Workers serves them with proper WASM headers and SPA routing. There is no server-side code.
+The entire application compiles to static files that can be served by any static hosting provider. There is no server-side code.
 
 ---
 
@@ -187,7 +186,6 @@ The entire application compiles to static files. Cloudflare Workers serves them 
 | `make format` | Auto-format with Biome |
 | `make lint` | TypeScript + Biome checks |
 | `make check` | Format + lint (full quality gate) |
-| `make deploy` | Build + deploy to Cloudflare Workers |
 | `make clean` | Remove `node_modules` and `dist` |
 
 ### Tech Stack
@@ -204,7 +202,7 @@ The entire application compiles to static files. Cloudflare Workers serves them 
 | Routing | Wouter |
 | Icons | Lucide React |
 | Lint / Format | Biome |
-| Hosting | Cloudflare Workers |
+| Hosting | Any static host (Vercel, Netlify, Cloudflare Pages, etc.) |
 
 ### Project Structure
 
@@ -215,9 +213,7 @@ frontend/
 │   ├── favicon.svg            Browser tab icon
 │   ├── apple-touch-icon.png   iOS home screen icon
 │   ├── og-image.png           Social sharing preview (1200×630)
-│   ├── robots.txt             Crawler directives
-│   ├── sitemap.xml            XML sitemap
-│   └── _headers               Cloudflare caching + security headers
+│   └── robots.txt             Crawler directives
 ├── src/
 │   ├── engine/
 │   │   ├── types.ts           Shared types, error class, image/redaction settings
@@ -266,36 +262,8 @@ frontend/
 ├── index.html                 Meta tags, structured data, noscript fallback
 ├── vite.config.ts
 └── package.json
-wrangler.jsonc                 Cloudflare Workers deployment config
 Makefile                       Dev workflow commands
 ```
-
----
-
-## Deployment
-
-Redacta deploys as a static site on Cloudflare Workers. Push to `main` triggers automatic deployment.
-
-```mermaid
-flowchart LR
-    A["git push main"] --> B["Cloudflare Build"]
-    B --> C["bun install\n+ bun run build"]
-    C --> D["wrangler deploy"]
-    D --> E["redacta.khattar.dev"]
-
-    style A fill:#1c1c20,stroke:#30303a,color:#e2dfd8
-    style B fill:#f38020,stroke:#f38020,color:#fff
-    style C fill:#1c1c20,stroke:#30303a,color:#e2dfd8
-    style D fill:#f38020,stroke:#f38020,color:#fff
-    style E fill:#d9534f,stroke:#d9534f,color:#fff
-```
-
-### Cloudflare build settings
-
-| Setting | Value |
-|---|---|
-| Build command | `cd frontend && bun install && bun run build` |
-| Deploy command | `npx wrangler deploy` |
 
 ---
 

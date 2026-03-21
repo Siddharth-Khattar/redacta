@@ -1,4 +1,4 @@
-.PHONY: setup clean dev build preview format lint check deploy indexnow
+.PHONY: setup clean dev build preview format lint check
 
 setup:
 	cd frontend && bun install
@@ -25,9 +25,3 @@ lint:
 check: format lint
 	@echo "All checks passed."
 
-deploy: build
-	npx wrangler deploy
-	@$(MAKE) indexnow
-
-indexnow:
-	./scripts/indexnow-ping.sh
