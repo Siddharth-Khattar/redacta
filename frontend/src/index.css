@@ -150,6 +150,28 @@ html.light .noise::before {
   animation: fade-in-up 0.5s ease-out 0.35s both;
 }
 
+/* Trust marquee — infinite horizontal scroll */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.trust-marquee {
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
+
+/* Slow horizontal scroll is accessibility-safe; keep it running even with reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .trust-marquee {
+    animation: marquee 60s linear infinite !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

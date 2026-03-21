@@ -73,6 +73,43 @@ export function LandingPage() {
         {/* Vignette for text readability */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,var(--color-bg)_85%)] z-1 pointer-events-none" />
 
+        {/* Trust marquee at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 overflow-hidden border-t border-border-subtle/60 bg-bg/50 backdrop-blur-md pointer-events-none">
+          <div className="trust-marquee flex whitespace-nowrap py-3">
+            {[0, 1].map((copy) => (
+              <div
+                key={copy}
+                className="flex shrink-0 items-center gap-8 px-4 text-xs font-medium tracking-wide text-text-dim uppercase"
+              >
+                <span>No Signup Required</span>
+                <span className="text-border">✦</span>
+                <span>No Watermarks</span>
+                <span className="text-border">✦</span>
+                <span>Free &amp; Open Source</span>
+                <span className="text-border">✦</span>
+                <span>GDPR Compliant</span>
+                <span className="text-border">✦</span>
+                <span>HIPAA Compliant</span>
+                <span className="text-border">✦</span>
+                <span>CCPA / CPRA</span>
+                <span className="text-border">✦</span>
+                <span>No Subscriptions</span>
+                <span className="text-border">✦</span>
+                <span>Permanent Redaction</span>
+                <span className="text-border">✦</span>
+                <span>No Software Installation</span>
+                <span className="text-border">✦</span>
+                <span>Zero Data Retention</span>
+                <span className="text-border">✦</span>
+                <span>Works Offline After Load</span>
+                <span className="text-border">✦</span>
+                <span>No File Size Limits</span>
+                <span className="text-border">✦</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Hero content */}
         <div className="relative z-10 max-w-xl px-8 pointer-events-none">
           <div className="stagger-1 mb-6">
