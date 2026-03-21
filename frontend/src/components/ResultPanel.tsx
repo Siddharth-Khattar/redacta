@@ -277,16 +277,16 @@ export function ResultPanel({ result, onRerender }: ResultPanelProps) {
       )}
 
       {/* Status bar */}
-      <div className="flex items-center gap-2.5 px-4 h-11 bg-bg border-t border-border">
-        <CheckCircle className={`w-4.5 h-4.5 shrink-0 ${isPseudo ? "text-pseudo" : "text-done"}`} />
-        <span className={`text-xs font-medium ${isPseudo ? "text-pseudo" : "text-done"}`}>
+      <div className="flex items-center gap-3 px-5 h-12 bg-bg border-t border-border">
+        <CheckCircle className={`w-5 h-5 shrink-0 ${isPseudo ? "text-pseudo" : "text-done"}`} />
+        <span className={`text-sm font-medium ${isPseudo ? "text-pseudo" : "text-done"}`}>
           {isPseudo ? "Pseudonymised" : "Redacted"}
         </span>
 
         {/* Highlight color dots (pseudonymise only) */}
         {isPseudo && (
-          <div className="flex items-center gap-1 ml-1">
-            {rerendering && <Loader2 className="w-3 h-3 text-text-dim animate-spin" />}
+          <div className="flex items-center gap-1.5 ml-1">
+            {rerendering && <Loader2 className="w-3.5 h-3.5 text-text-dim animate-spin" />}
             {HIGHLIGHT_COLORS.map((c) => (
               <button
                 key={c.value}
@@ -295,7 +295,7 @@ export function ResultPanel({ result, onRerender }: ResultPanelProps) {
                 onClick={() => handleHighlightColorChange(c.value)}
                 aria-label={`Highlight: ${c.value}`}
                 className={`
-                  w-3.5 h-3.5 rounded-full ${c.bg} transition-all duration-150
+                  w-4 h-4 rounded-full ${c.bg} transition-all duration-150
                   ${
                     result.highlightColor === c.value
                       ? `ring-1.5 ${c.ring} ring-offset-1 ring-offset-bg scale-110`
@@ -310,27 +310,27 @@ export function ResultPanel({ result, onRerender }: ResultPanelProps) {
 
         {/* Rerender spinner for non-pseudo mode */}
         {!isPseudo && rerendering && (
-          <Loader2 className="w-3 h-3 text-text-dim animate-spin ml-1" />
+          <Loader2 className="w-3.5 h-3.5 text-text-dim animate-spin ml-1" />
         )}
 
         {result.reasoning && (
-          <span className="text-xs text-text-faint truncate ml-2">{result.reasoning}</span>
+          <span className="text-sm text-text-faint truncate ml-2">{result.reasoning}</span>
         )}
 
         {/* Right-side buttons */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
           {hasImages && (
             <button
               type="button"
               onClick={() => setShowImageSettings((v) => !v)}
-              className="flex items-center gap-1 text-xs text-text-dim hover:text-text-sub transition-colors"
+              className="flex items-center gap-1.5 text-sm text-text-dim hover:text-text-sub transition-colors"
             >
-              <ImageOff className="w-3 h-3" />
+              <ImageOff className="w-3.5 h-3.5" />
               {activeImageCount} {activeImageCount === 1 ? "image" : "images"}
               {showImageSettings ? (
-                <ChevronDown className="w-3.5 h-3.5" />
+                <ChevronDown className="w-4 h-4" />
               ) : (
-                <ChevronUp className="w-3.5 h-3.5" />
+                <ChevronUp className="w-4 h-4" />
               )}
             </button>
           )}
@@ -338,13 +338,13 @@ export function ResultPanel({ result, onRerender }: ResultPanelProps) {
             <button
               type="button"
               onClick={() => setShowMapping((v) => !v)}
-              className="flex items-center gap-1 text-xs text-text-dim hover:text-text-sub transition-colors"
+              className="flex items-center gap-1.5 text-sm text-text-dim hover:text-text-sub transition-colors"
             >
               {mappingEntries.length} {mappingEntries.length === 1 ? "mapping" : "mappings"}
               {showMapping ? (
-                <ChevronDown className="w-3.5 h-3.5" />
+                <ChevronDown className="w-4 h-4" />
               ) : (
-                <ChevronUp className="w-3.5 h-3.5" />
+                <ChevronUp className="w-4 h-4" />
               )}
             </button>
           )}

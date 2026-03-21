@@ -174,14 +174,16 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
   };
 
   return (
-    <div className="flex-1 flex flex-col p-6 overflow-y-auto">
-      <div className="flex-1 flex flex-col max-w-sm mx-auto w-full pt-12">
+    <div className="flex-1 flex flex-col p-8 overflow-y-auto">
+      <div className="flex-1 flex flex-col max-w-md mx-auto w-full pt-10">
         {/* Heading */}
-        <div className="mb-5">
-          <h3 className="text-xl font-semibold text-text mb-1 tracking-tight">
+        <div className="mb-6">
+          <h3 className="text-2xl font-semibold text-text mb-1.5 tracking-tight">
             {mode === "redact" ? "What should we redact?" : "What should we pseudonymise?"}
           </h3>
-          <p className="text-sm text-text-dim">Describe the sensitive content in plain language</p>
+          <p className="text-base text-text-dim">
+            Describe the sensitive content in plain language
+          </p>
         </div>
 
         {/* Prompt */}
@@ -194,21 +196,21 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
               ? "Redact all personal names, phone numbers, and email addresses..."
               : "Pseudonymise all personal names, phone numbers, and email addresses..."
           }
-          className="w-full h-28 px-4 py-3 rounded-xl border border-border bg-bg text-text text-sm placeholder:text-text-faint focus:outline-none focus:border-text-dim resize-none leading-relaxed transition-colors"
+          className="w-full h-32 px-4 py-3.5 rounded-xl border border-border bg-bg text-text text-base placeholder:text-text-faint focus:outline-none focus:border-text-dim resize-none leading-relaxed transition-colors"
           autoFocus
         />
 
         {/* Settings */}
-        <div className="mt-5 space-y-4">
+        <div className="mt-6 space-y-5">
           {/* Mode toggle */}
           <div>
-            <p className="text-xs font-medium text-text-dim mb-2">Mode</p>
-            <div className="flex gap-1.5">
+            <p className="text-sm font-medium text-text-dim mb-2.5">Mode</p>
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setMode("redact")}
                 className={`
-                  flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                  flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
                   ${
                     mode === "redact"
                       ? "bg-redact-soft text-redact shadow-sm ring-1 ring-redact/20"
@@ -222,7 +224,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
                 type="button"
                 onClick={() => setMode("pseudonymise")}
                 className={`
-                  flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                  flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
                   ${
                     mode === "pseudonymise"
                       ? "bg-pseudo-soft text-pseudo shadow-sm ring-1 ring-pseudo/20"
@@ -240,9 +242,9 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
             <button
               type="button"
               onClick={() => setShowModelSettings((v) => !v)}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-surface hover:bg-surface-hover transition-colors"
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg bg-surface hover:bg-surface-hover transition-colors"
             >
-              <span className="text-xs text-text-sub">
+              <span className="text-sm text-text-sub">
                 {PROVIDER_LABELS[selectedProvider]}
                 <span className="text-text-faint mx-1.5">&middot;</span>
                 {modelDef?.label ?? selectedModel}
@@ -254,9 +256,9 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
                 )}
               </span>
               {showModelSettings ? (
-                <ChevronUp className="w-3.5 h-3.5 text-text-faint" />
+                <ChevronUp className="w-4 h-4 text-text-faint" />
               ) : (
-                <ChevronDown className="w-3.5 h-3.5 text-text-faint" />
+                <ChevronDown className="w-4 h-4 text-text-faint" />
               )}
             </button>
 
@@ -270,18 +272,18 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
                   transition={{ duration: 0.2, ease: "easeInOut" }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-2 pb-1 space-y-3 pl-1">
+                  <div className="pt-3 pb-1 space-y-4 pl-1">
                     {/* Provider */}
                     <div>
-                      <p className="text-xs font-medium text-text-dim mb-2">Provider</p>
-                      <div className="flex gap-1.5">
+                      <p className="text-sm font-medium text-text-dim mb-2.5">Provider</p>
+                      <div className="flex gap-2">
                         {configuredProviders.map((p) => (
                           <button
                             key={p}
                             type="button"
                             onClick={() => handleProviderChange(p)}
                             className={`
-                              flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                              flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
                               ${
                                 selectedProvider === p
                                   ? "bg-surface text-text shadow-sm ring-1 ring-border"
@@ -297,15 +299,15 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
 
                     {/* Model */}
                     <div>
-                      <p className="text-xs font-medium text-text-dim mb-2">Model</p>
-                      <div className="flex gap-1.5">
+                      <p className="text-sm font-medium text-text-dim mb-2.5">Model</p>
+                      <div className="flex gap-2">
                         {providerModels.map((m) => (
                           <button
                             key={m.id}
                             type="button"
                             onClick={() => handleModelChange(m.id)}
                             className={`
-                              flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                              flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
                               ${
                                 selectedModel === m.id
                                   ? "bg-surface text-text shadow-sm ring-1 ring-border"
@@ -321,16 +323,16 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
 
                     {/* Thinking */}
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="text-xs font-medium text-text-dim">Thinking</p>
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <p className="text-sm font-medium text-text-dim">Thinking</p>
                         {!supportsThinking && (
-                          <span className="text-[11px] text-text-faint">
+                          <span className="text-xs text-text-faint">
                             — not available for this model
                           </span>
                         )}
                       </div>
                       <div
-                        className={`flex gap-1.5 ${!supportsThinking ? "opacity-35 pointer-events-none" : ""}`}
+                        className={`flex gap-2 ${!supportsThinking ? "opacity-35 pointer-events-none" : ""}`}
                       >
                         {supportedLevels.map((level) => (
                           <button
@@ -339,7 +341,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
                             onClick={() => setThinkingLevel(level)}
                             disabled={!supportsThinking}
                             className={`
-                              flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                              flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
                               ${
                                 thinkingLevel === level && supportsThinking
                                   ? "bg-surface text-text shadow-sm ring-1 ring-border"
@@ -361,8 +363,8 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
           {/* Highlight color picker — pseudonymise mode only */}
           {mode === "pseudonymise" && (
             <div>
-              <p className="text-xs font-medium text-text-dim mb-2">Highlight color</p>
-              <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-text-dim mb-2.5">Highlight color</p>
+              <div className="flex items-center gap-2.5">
                 {HIGHLIGHT_COLORS.map((c) => (
                   <button
                     key={c.value}
@@ -370,7 +372,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
                     onClick={() => setHighlightColor(c.value)}
                     aria-label={`Highlight color: ${c.value}`}
                     className={`
-                      w-7 h-7 rounded-full ${c.bg} transition-all duration-150
+                      w-8 h-8 rounded-full ${c.bg} transition-all duration-150
                       ${
                         highlightColor === c.value
                           ? `ring-2 ${c.ring} ring-offset-2 ring-offset-bg`
@@ -385,22 +387,22 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
 
           {/* Redact images toggle */}
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-text-dim">Remove images</p>
+            <p className="text-sm font-medium text-text-dim">Remove images</p>
             <button
               type="button"
               role="switch"
               aria-checked={redactImages}
               onClick={() => setRedactImages(!redactImages)}
               className={`
-                relative w-10 h-5.5 rounded-full transition-colors duration-200
+                relative w-11 h-6 rounded-full transition-colors duration-200
                 ${redactImages ? (mode === "pseudonymise" ? "bg-pseudo" : "bg-redact") : "bg-border"}
               `}
             >
               <span
                 className={`
-                  absolute top-0.75 left-0.75 w-4 h-4 rounded-full bg-white
+                  absolute top-0.75 left-0.75 w-4.5 h-4.5 rounded-full bg-white
                   transition-transform duration-200 shadow-sm
-                  ${redactImages ? "translate-x-4.5" : "translate-x-0"}
+                  ${redactImages ? "translate-x-5" : "translate-x-0"}
                 `}
               />
             </button>
@@ -413,7 +415,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
           onClick={handleSubmit}
           disabled={!canSubmit}
           className={`
-            mt-6 w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200
+            mt-8 w-full py-3.5 rounded-xl text-base font-semibold transition-all duration-200
             ${
               canSubmit
                 ? mode === "redact"
@@ -430,8 +432,8 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
               : "Pseudonymise Document"}
         </button>
 
-        <p className="text-center mt-3 text-xs text-text-faint">
-          <kbd className="px-1.5 py-0.5 rounded-md bg-surface text-text-dim border border-border text-[11px]">
+        <p className="text-center mt-3 text-sm text-text-faint">
+          <kbd className="px-1.5 py-0.5 rounded-md bg-surface text-text-dim border border-border text-xs">
             Cmd + Enter
           </kbd>
         </p>

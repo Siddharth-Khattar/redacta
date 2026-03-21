@@ -51,7 +51,7 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
       : "redactions";
 
   return (
-    <div className="flex-none border-t border-border px-6 py-3 bg-raised">
+    <div className="flex-none border-t border-border px-6 py-3.5 bg-raised">
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
         {/* Left: Pages */}
         <div className="text-sm text-text-sub flex items-center gap-3">
@@ -71,14 +71,14 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
 
         {/* Center: Token stats */}
         <div className="text-sm text-text-sub flex items-center justify-center gap-3">
-          <span className="font-mono text-xs text-text-dim" title="Total processing time">
+          <span className="font-mono text-sm text-text-dim" title="Total processing time">
             {formatDuration(usage.total_duration_ms)}
           </span>
           {usage.total_tokens > 0 && (
             <>
               <Dot />
               <span
-                className="font-mono text-xs text-text-dim"
+                className="font-mono text-sm text-text-dim"
                 title={[
                   `Input: ${usage.input_tokens.toLocaleString()}`,
                   `Output: ${usage.output_tokens.toLocaleString()}`,
@@ -95,7 +95,7 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
                 <>
                   <Dot />
                   <span
-                    className="font-mono text-xs text-text-dim"
+                    className="font-mono text-sm text-text-dim"
                     title={`Estimated cost for ${usage.model} (${usage.pricing_source})`}
                   >
                     ~{formatCost(cost)}
@@ -107,23 +107,23 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={onRedactAgain}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-sm text-text-sub hover:text-text rounded-lg hover:bg-surface transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-text-sub hover:text-text rounded-lg hover:bg-surface transition-colors"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4" />
             Again
           </button>
           <button
             type="button"
             onClick={handleDownload}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors shadow-sm ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-medium transition-colors shadow-sm ${
               isPseudo ? "bg-pseudo hover:bg-pseudo-hover" : "bg-redact hover:bg-redact-hover"
             }`}
           >
-            <ArrowDownToLine className="w-3.5 h-3.5" />
+            <ArrowDownToLine className="w-4 h-4" />
             Download PDF
           </button>
         </div>

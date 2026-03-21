@@ -223,23 +223,23 @@ export function WorkspacePage({
               <ResultPanel result={result} onRerender={handleRerender} />
             )}
             {state === "error" && (
-              <div className="flex-1 flex items-center justify-center p-8">
-                <div className="text-center max-w-sm">
+              <div className="flex-1 flex items-center justify-center p-10">
+                <div className="text-center max-w-md">
                   <div
-                    className={`w-3 h-3 rounded-full mx-auto mb-5 ${lastMode === "pseudonymise" ? "bg-pseudo" : "bg-redact"}`}
+                    className={`w-4 h-4 rounded-full mx-auto mb-6 ${lastMode === "pseudonymise" ? "bg-pseudo" : "bg-redact"}`}
                   />
-                  <h3 className="text-lg font-semibold text-text mb-2">
+                  <h3 className="text-xl font-semibold text-text mb-2">
                     {lastMode === "pseudonymise" ? "Pseudonymisation failed" : "Redaction failed"}
                   </h3>
-                  <p className="text-sm text-text-sub mb-2 leading-relaxed">{errorMessage}</p>
+                  <p className="text-base text-text-sub mb-2 leading-relaxed">{errorMessage}</p>
                   {errorMessage === RATE_LIMIT_ERROR_MESSAGE && (
-                    <p className="text-xs text-text-dim mb-6">Usually resolves within a minute.</p>
+                    <p className="text-sm text-text-dim mb-6">Usually resolves within a minute.</p>
                   )}
                   {errorMessage !== RATE_LIMIT_ERROR_MESSAGE && <div className="mb-6" />}
                   <button
                     type="button"
                     onClick={handleRetry}
-                    className={`px-5 py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
+                    className={`px-6 py-3 rounded-lg text-white text-base font-medium transition-colors ${
                       lastMode === "pseudonymise"
                         ? "bg-pseudo hover:bg-pseudo-hover"
                         : "bg-redact hover:bg-redact-hover"

@@ -38,10 +38,10 @@ export function PdfPanel({ file, label, onFileChange }: PdfPanelProps) {
   return (
     <div className="relative w-full h-full flex flex-col">
       <iframe src={`${blobUrl}#toolbar=0`} className="flex-1 w-full bg-bg" title={label} />
-      <div className="flex items-center gap-2.5 px-4 h-11 bg-bg border-t border-border">
-        <FileText className="w-3.5 h-3.5 text-text-dim shrink-0" />
-        <span className="text-xs text-text-sub truncate">{label}</span>
-        <span className="text-xs text-text-faint font-mono shrink-0">
+      <div className="flex items-center gap-3 px-5 h-12 bg-bg border-t border-border">
+        <FileText className="w-4 h-4 text-text-dim shrink-0" />
+        <span className="text-sm text-text-sub truncate">{label}</span>
+        <span className="text-sm text-text-faint font-mono shrink-0">
           {formatFileSize(file.size)}
         </span>
         {onFileChange && (
@@ -56,9 +56,9 @@ export function PdfPanel({ file, label, onFileChange }: PdfPanelProps) {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="ml-auto flex items-center gap-1.5 px-2.5 py-1 text-xs text-text-dim hover:text-text rounded-md hover:bg-surface transition-colors shrink-0"
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-dim hover:text-text rounded-md hover:bg-surface transition-colors shrink-0"
             >
-              <FilePlus2 className="w-3.5 h-3.5" />
+              <FilePlus2 className="w-4 h-4" />
               New file
             </button>
           </>
