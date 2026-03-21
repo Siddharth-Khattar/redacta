@@ -139,14 +139,6 @@ export default function App() {
     [file, keys, clearKey],
   );
 
-  const handleReset = useCallback(() => {
-    abortControllerRef.current?.abort();
-    setFile(null);
-    setResult(null);
-    setErrorMessage(null);
-    setState("upload");
-  }, []);
-
   const handleRedactAgain = useCallback(() => {
     setResult(null);
     setErrorMessage(null);
@@ -206,8 +198,6 @@ export default function App() {
   return (
     <div className="noise h-screen flex flex-col bg-bg">
       <Header
-        showReset={state !== "upload"}
-        onReset={handleReset}
         theme={theme}
         onToggleTheme={handleToggleTheme}
         apiKeySet={hasAnyKey}
@@ -256,6 +246,7 @@ export default function App() {
                   <PdfPanel
                     file={file}
                     label={state === "result" ? `Original: ${file.name}` : file.name}
+                    onFileChange={handleFileAccepted}
                   />
                   {state === "processing" && <ScanOverlay containerRef={pdfPanelRef} />}
                 </div>

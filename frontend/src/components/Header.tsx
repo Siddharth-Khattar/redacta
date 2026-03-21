@@ -1,26 +1,17 @@
-// ABOUTME: App header with branding, theme toggle, and reset button.
+// ABOUTME: App header with branding, theme toggle, and API key button.
 // ABOUTME: Clean, minimal — bracket logo + wordmark.
 
-import { KeyRound, Moon, RotateCcw, Sun } from "lucide-react";
+import { KeyRound, Moon, Sun } from "lucide-react";
 import { RedactaLogo } from "./RedactaLogo";
 
 interface HeaderProps {
-  showReset: boolean;
-  onReset: () => void;
   theme: "dark" | "light";
   onToggleTheme: () => void;
   apiKeySet: boolean;
   onApiKeyClick: () => void;
 }
 
-export function Header({
-  showReset,
-  onReset,
-  theme,
-  onToggleTheme,
-  apiKeySet,
-  onApiKeyClick,
-}: HeaderProps) {
+export function Header({ theme, onToggleTheme, apiKeySet, onApiKeyClick }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 h-14 border-b border-border bg-bg/80 backdrop-blur-md z-20 relative">
       <div className="flex items-center gap-2">
@@ -48,16 +39,6 @@ export function Header({
         >
           {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
-        {showReset && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="flex items-center gap-2 px-3.5 py-1.5 text-sm text-text-sub hover:text-text rounded-lg hover:bg-surface transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            New file
-          </button>
-        )}
       </div>
     </header>
   );
