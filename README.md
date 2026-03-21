@@ -54,22 +54,22 @@ Everything happens client-side. The PDF is processed by MuPDF compiled to WebAss
 ## Features
 
 ### Redaction & Pseudonymisation
-- **Natural language redaction** — describe what to censor, not where it is
-- **Pseudonymisation mode** — replace real PII with realistic fictional alternatives (names, addresses, IDs) instead of blacking out, preserving document readability
-- **Permanent or visual** — irreversible text destruction or black-box overlays
-- **Image redaction** — detect and redact photos, signatures, logos, and screenshots embedded in PDFs with configurable fill colours and labels
+- **Natural language redaction** : describe what to censor, not where it is
+- **Pseudonymisation mode** : replace real PII with realistic fictional alternatives (names, addresses, IDs) instead of blacking out, preserving document readability
+- **Permanent or visual** : irreversible text destruction or black-box overlays
+- **Image redaction** : detect and redact photos, signatures, logos, and screenshots embedded in PDFs with configurable fill colours and labels
 
 ### AI Models
-- **Multi-provider support** — bring your own Gemini or OpenAI API key
-- **5 models** — Gemini 2.5 Flash, 3.0 Flash, 3.1 Pro · GPT-5.4, GPT-5.4 Mini
-- **Configurable thinking depth** — minimal to high reasoning for complex documents
-- **Live cost estimation** — token counts and USD cost displayed after each run
+- **Multi-provider support** : bring your own Gemini or OpenAI API key
+- **5 models** : Gemini 2.5 Flash, 3.0 Flash, 3.1 Pro · GPT-5.4, GPT-5.4 Mini
+- **Configurable thinking depth** : minimal to high reasoning for complex documents
+- **Live cost estimation** : token counts and USD cost displayed after each run
 
 ### Workspace
-- **Split-pane viewer** — original and redacted PDFs side by side, resizable
-- **Post-processing controls** — adjust highlight colours, image fill, and label visibility after redaction without re-running AI
-- **Dark & light themes** — respects system preference, toggleable
-- **Per-provider key management** — separate API keys for each provider, stored locally
+- **Split-pane viewer** : original and redacted PDFs side by side, resizable
+- **Post-processing controls** : adjust highlight colours, image fill, and label visibility after redaction without re-running AI
+- **Dark & light themes** : respects system preference, toggleable
+- **Per-provider key management** : separate API keys for each provider, stored locally
 
 ---
 
