@@ -200,6 +200,29 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
           autoFocus
         />
 
+        {/* PII preset chip */}
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => {
+              const verb = mode === "redact" ? "Redact" : "Pseudonymise";
+              setPrompt(
+                `${verb} all personally identifiable information including: full names, dates of birth, home addresses, phone numbers, email addresses, social security numbers, tax IDs, passport numbers, driver's license numbers, bank account numbers, IBAN, BIC/SWIFT codes, credit card numbers, IP addresses, and signatures`,
+              );
+            }}
+            className={`
+              inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150
+              ${
+                mode === "redact"
+                  ? "bg-redact-soft text-redact hover:bg-redact/15"
+                  : "bg-pseudo-soft text-pseudo hover:bg-pseudo/15"
+              }
+            `}
+          >
+            Detect all PII
+          </button>
+        </div>
+
         {/* Settings */}
         <div className="mt-6 space-y-5">
           {/* Mode toggle */}
