@@ -88,6 +88,13 @@ export async function runRedactionPipeline(
           chunkText.set(p, pdfText.get(p)!);
         }
 
+        // For pseudonymisation, pass accumulated mappings from prior chunks
+        // so the AI reuses the same labels for recurring entities.
+        const priorMappings =
+          mode === "pseudonymise" && Object.keys(allMappings).length > 0
+            ? allMappings
+            : undefined;
+
         const chunkResult = await provider.identifyTargets(
           apiKey,
           modelId,
@@ -95,6 +102,7 @@ export async function runRedactionPipeline(
           prompt,
           thinkingLevel,
           mode,
+          priorMappings,
         );
 
         allTargets.push(...chunkResult.result.targets);

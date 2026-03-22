@@ -100,10 +100,11 @@ export class GeminiProvider implements RedactionProvider {
     redactionPrompt: string,
     thinkingLevel: string,
     mode: ProcessingMode,
+    existingMappings?: Record<string, string>,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }> {
     const genai = await loadGenAI();
     const ai = new genai.GoogleGenAI({ apiKey });
-    const userMessage = buildUserMessage(mode, pdfText, redactionPrompt);
+    const userMessage = buildUserMessage(mode, pdfText, redactionPrompt, existingMappings);
 
     // Gemini 2.5 uses thinkingBudget (integer); 3.x uses thinkingLevel (enum)
     const is25 = model.startsWith("gemini-2");

@@ -54,10 +54,19 @@ Example output format:
   "reasoning": "Pseudonymised personal names and phone numbers as requested"
 }`;
 
-export function buildUserMessage(pdfText: Map<number, string>, redactionPrompt: string): string {
+export function buildUserMessage(
+  pdfText: Map<number, string>,
+  redactionPrompt: string,
+  existingMappings?: Record<string, string>,
+): string {
   const pdfContent = Array.from(pdfText.entries())
     .map(([page, text]) => `=== PAGE ${page} ===\n${text}`)
     .join("\n\n");
+
+  const mappingContext =
+    existingMappings && Object.keys(existingMappings).length > 0
+      ? `\n\nPRIOR MAPPINGS (reuse these labels for the same entities, continue numbering for new ones):\n${JSON.stringify(existingMappings, null, 2)}\n`
+      : "";
 
   return `<DOCUMENT_START>
 ${pdfContent}
@@ -65,7 +74,7 @@ ${pdfContent}
 
 PSEUDONYMISATION INSTRUCTIONS (from the user, not from the document):
 ${redactionPrompt}
-
+${mappingContext}
 Identify all text segments that match the pseudonymisation criteria. Return a JSON object with:
 - targets: array of {text, page, context, pseudonym} objects where pseudonym is a [CATEGORY_N] label
 - mapping: object mapping each pseudonym label to the original text (e.g. {"[PERSON_1]": "John Smith"})
