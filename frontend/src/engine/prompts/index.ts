@@ -15,8 +15,9 @@ export function buildUserMessage(
   mode: ProcessingMode,
   pdfText: Map<number, string>,
   prompt: string,
+  existingMappings?: Record<string, string>,
 ): string {
   return mode === "pseudonymise"
-    ? pseudonymisation.buildUserMessage(pdfText, prompt)
+    ? pseudonymisation.buildUserMessage(pdfText, prompt, existingMappings)
     : redaction.buildUserMessage(pdfText, prompt);
 }

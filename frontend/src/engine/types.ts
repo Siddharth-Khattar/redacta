@@ -61,6 +61,12 @@ export interface CostEstimate {
   pricingSource: string;
 }
 
+export interface RedactionStats {
+  identified: number;
+  applied: number;
+  missed: RedactionTarget[];
+}
+
 export interface RedactionPipelineResult {
   redactedPdf: Uint8Array;
   redactionCount: number;
@@ -74,6 +80,7 @@ export interface RedactionPipelineResult {
   tokenUsage: TokenUsage;
   costEstimate: CostEstimate;
   totalDurationMs: number;
+  stats: RedactionStats;
 }
 
 export type RedactionErrorCode =

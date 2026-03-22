@@ -77,8 +77,9 @@ export class OpenAIProvider implements RedactionProvider {
     redactionPrompt: string,
     thinkingLevel: string,
     mode: ProcessingMode,
+    existingMappings?: Record<string, string>,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }> {
-    const userMessage = buildUserMessage(mode, pdfText, redactionPrompt);
+    const userMessage = buildUserMessage(mode, pdfText, redactionPrompt, existingMappings);
     const effort = REASONING_EFFORT_MAP[thinkingLevel] ?? "low";
 
     try {

@@ -40,6 +40,8 @@ export interface UsageStats {
 export interface RedactionResponse {
   redacted_pdf: string;
   redaction_count: number;
+  applied_count: number;
+  missed_targets: RedactionTarget[];
   targets: RedactionTarget[];
   reasoning: string | null;
   permanent: boolean;
@@ -97,6 +99,13 @@ export async function redactPdf(
     return {
       redacted_pdf: uint8ArrayToBase64(result.redactedPdf),
       redaction_count: result.redactionCount,
+      applied_count: result.stats.applied,
+      missed_targets: result.stats.missed.map((t) => ({
+        text: t.text,
+        page: t.page,
+        context: t.context,
+        pseudonym: t.pseudonym,
+      })),
       targets: result.targets.map((t) => ({
         text: t.text,
         page: t.page,
@@ -193,10 +202,10 @@ export async function reapplySettings(
 ): Promise<string> {
   const pdfBytes = await file.arrayBuffer();
 
-  const redactedPdf =
+  const result =
     mode === "pseudonymise"
       ? await applyPseudonymisation(pdfBytes, targets, highlightColor, imageTargets, imageSettings)
       : await applyRedactions(pdfBytes, targets, permanent, imageTargets, imageSettings);
 
-  return uint8ArrayToBase64(redactedPdf);
+  return uint8ArrayToBase64(result.pdf);
 }
