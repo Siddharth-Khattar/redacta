@@ -9,6 +9,7 @@ import {
   type ImageRedactionSettings,
   type ImageTarget,
   RedactionEngineError,
+  type RedactionStats,
   type RedactionTarget,
 } from "./types";
 
@@ -205,6 +206,10 @@ export async function extractText(pdfBytes: ArrayBuffer): Promise<Map<number, st
  *
  * Permanent mode: creates Redact annotations and applies them (destroys text beneath).
  * Visual mode: creates black-filled Square annotations (text remains underneath).
+ *
+ * SECURITY WARNING: Visual mode (permanent=false) does NOT remove the underlying text.
+ * It only covers it with opaque annotations that can be removed by any PDF editor.
+ * Always use permanent=true for actual redaction of sensitive data.
  */
 export async function applyRedactions(
   pdfBytes: ArrayBuffer,
@@ -212,9 +217,11 @@ export async function applyRedactions(
   permanent: boolean,
   imageTargets: ImageTarget[],
   imageSettings: ImageRedactionSettings | null,
-): Promise<Uint8Array> {
+): Promise<{ pdf: Uint8Array; stats: RedactionStats }> {
   const mupdf = await getMupdf();
   const doc = mupdf.Document.openDocument(pdfBytes, "application/pdf");
+  const missed: RedactionTarget[] = [];
+  let appliedCount = 0;
 
   try {
     const pdfDoc = doc.asPDF() as PDFDocument | null;
@@ -255,8 +262,12 @@ export async function applyRedactions(
         if (hasTextTargets) {
           for (const target of pageTargets) {
             const hits: Quad[][] = page.search(target.text);
-            if (hits.length === 0) continue;
+            if (hits.length === 0) {
+              missed.push(target);
+              continue;
+            }
 
+            appliedCount++;
             for (const quads of hits) {
               for (const quad of quads) {
                 const annot = page.createAnnotation("Redact");
@@ -284,8 +295,12 @@ export async function applyRedactions(
         if (hasTextTargets) {
           for (const target of pageTargets) {
             const hits: Quad[][] = page.search(target.text);
-            if (hits.length === 0) continue;
+            if (hits.length === 0) {
+              missed.push(target);
+              continue;
+            }
 
+            appliedCount++;
             for (const quads of hits) {
               for (const quad of quads) {
                 const annot = page.createAnnotation("Square");
@@ -306,7 +321,10 @@ export async function applyRedactions(
     }
 
     const buffer = pdfDoc.saveToBuffer("compress");
-    return buffer.asUint8Array();
+    return {
+      pdf: buffer.asUint8Array(),
+      stats: { identified: targets.length, applied: appliedCount, missed },
+    };
   } finally {
     doc.destroy();
   }
@@ -337,9 +355,11 @@ export async function applyPseudonymisation(
   highlightColor: HighlightColor,
   imageTargets: ImageTarget[],
   imageSettings: ImageRedactionSettings | null,
-): Promise<Uint8Array> {
+): Promise<{ pdf: Uint8Array; stats: RedactionStats }> {
   const mupdf = await getMupdf();
   const doc = mupdf.Document.openDocument(pdfBytes, "application/pdf");
+  const missed: RedactionTarget[] = [];
+  let appliedCount = 0;
 
   try {
     const pdfDoc = doc.asPDF() as PDFDocument | null;
@@ -381,8 +401,12 @@ export async function applyPseudonymisation(
         for (const target of pageTargets) {
           const pseudonym = target.pseudonym ?? target.text;
           const hits: Quad[][] = page.search(target.text);
-          if (hits.length === 0) continue;
+          if (hits.length === 0) {
+            missed.push(target);
+            continue;
+          }
 
+          appliedCount++;
           for (const quads of hits) {
             for (const quad of quads) {
               const rect = quadToRect(quad);
@@ -449,7 +473,10 @@ export async function applyPseudonymisation(
     }
 
     const buffer = pdfDoc.saveToBuffer("compress");
-    return buffer.asUint8Array();
+    return {
+      pdf: buffer.asUint8Array(),
+      stats: { identified: targets.length, applied: appliedCount, missed },
+    };
   } finally {
     doc.destroy();
   }

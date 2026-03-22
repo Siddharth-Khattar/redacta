@@ -1,7 +1,7 @@
 // ABOUTME: Bottom bar with redaction stats, usage metrics, and download/retry actions.
 // ABOUTME: Shows redaction count, token usage, cost estimate, and processing time.
 
-import { ArrowDownToLine, RotateCcw } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, RotateCcw } from "lucide-react";
 import { downloadFromBase64, type RedactionResponse, type RedactionTarget } from "../api/redaction";
 
 interface DownloadBarProps {
@@ -42,6 +42,7 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
   const uniquePages = new Set(result.targets.map((t: RedactionTarget) => t.page)).size;
   const { usage } = result;
   const cost = usage.estimated_cost_usd;
+  const missedCount = result.missed_targets.length;
   const statLabel = isPseudo
     ? result.redaction_count === 1
       ? "replacement"
@@ -64,6 +65,18 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
               <span>
                 <span className="font-semibold text-text">{uniquePages}</span>{" "}
                 {uniquePages === 1 ? "page" : "pages"}
+              </span>
+            </>
+          )}
+          {missedCount > 0 && (
+            <>
+              <Dot />
+              <span
+                className="text-amber-600 flex items-center gap-1"
+                title={`Could not locate in PDF: ${result.missed_targets.map((t) => `"${t.text}" (p${t.page})`).join(", ")}`}
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                {missedCount} not found
               </span>
             </>
           )}
