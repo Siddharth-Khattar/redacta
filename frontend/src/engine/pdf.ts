@@ -42,6 +42,19 @@ function quadToRect(quad: Quad): Rect {
   ];
 }
 
+// ── Page count utility ────────────────────────────────────────────────
+
+/** Return the total number of pages in a PDF without extracting text. */
+export async function getPageCount(pdfBytes: ArrayBuffer): Promise<number> {
+  const mupdf = await getMupdf();
+  const doc = mupdf.Document.openDocument(pdfBytes, "application/pdf");
+  try {
+    return doc.countPages();
+  } finally {
+    doc.destroy();
+  }
+}
+
 // ── Image fill color mapping ──────────────────────────────────────────
 
 const IMAGE_FILL_COLORS: Record<ImageFillColor, [number, number, number]> = {

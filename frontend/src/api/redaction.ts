@@ -23,6 +23,7 @@ export interface RedactionTarget {
   page: number;
   context: string | null;
   pseudonym?: string;
+  category?: string;
 }
 
 export interface UsageStats {
@@ -46,6 +47,7 @@ export interface RedactionResponse {
   mode: ProcessingMode;
   highlightColor: HighlightColor;
   redactImages: boolean;
+  page_count: number;
   imageTargets: ImageTarget[];
   imageSettings: ImageRedactionSettings;
   mapping: Record<string, string> | null;
@@ -98,12 +100,14 @@ export async function redactPdf(
         page: t.page,
         context: t.context,
         pseudonym: t.pseudonym,
+        category: t.category,
       })),
       reasoning: result.reasoning,
       permanent: result.permanent,
       mode: result.mode,
       highlightColor,
       redactImages,
+      page_count: result.pageCount,
       imageTargets: result.imageTargets,
       imageSettings: result.imageSettings,
       mapping: result.mapping,

@@ -78,6 +78,7 @@ interface PromptPanelProps {
     highlightColor: HighlightColor,
     redactImages: boolean,
     thorough: boolean,
+    presetId: string | null,
   ) => void;
 }
 
@@ -168,6 +169,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
         highlightColor,
         redactImages,
         thorough,
+        activePreset,
       );
     }
   };

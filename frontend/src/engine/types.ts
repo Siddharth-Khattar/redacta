@@ -33,6 +33,7 @@ export interface RedactionTarget {
   page: number;
   context: string | null;
   pseudonym?: string;
+  category?: string;
 }
 
 export interface RedactionResult {
@@ -69,6 +70,7 @@ export interface RedactionPipelineResult {
   permanent: boolean;
   mode: ProcessingMode;
   mapping: Record<string, string> | null;
+  pageCount: number;
   imageTargets: ImageTarget[];
   imageSettings: ImageRedactionSettings;
   tokenUsage: TokenUsage;

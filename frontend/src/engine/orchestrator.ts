@@ -1,7 +1,13 @@
 // ABOUTME: Pipeline coordinator for the client-side PDF redaction workflow.
 // ABOUTME: Orchestrates: extract text → identify targets → apply redactions/pseudonymisation → estimate cost.
 
-import { applyPseudonymisation, applyRedactions, detectImages, extractText } from "./pdf";
+import {
+  applyPseudonymisation,
+  applyRedactions,
+  detectImages,
+  extractText,
+  getPageCount,
+} from "./pdf";
 import { estimateCost, fetchPricing } from "./pricing";
 import { getProvider } from "./providers/registry";
 import type { ProviderId } from "./providers/types";
@@ -50,10 +56,12 @@ export async function runRedactionPipeline(
 
   let redactionResult: RedactionResult;
   let usage: TokenUsage;
+  let pageCount: number;
 
   if (hasPrompt) {
     const provider = getProvider(providerId);
     const pdfText = await extractText(pdfBytes);
+    pageCount = pdfText.size;
     const llmResult = await provider.identifyTargets(
       apiKey,
       modelId,
@@ -67,6 +75,7 @@ export async function runRedactionPipeline(
     usage = llmResult.usage;
   } else {
     // Image-only mode: skip LLM entirely
+    pageCount = await getPageCount(pdfBytes);
     redactionResult = { targets: [], reasoning: null };
     usage = {
       inputTokens: 0,
@@ -121,6 +130,7 @@ export async function runRedactionPipeline(
     permanent,
     mode,
     mapping: redactionResult.mapping ?? null,
+    pageCount,
     imageTargets,
     imageSettings: imageSettings ?? DEFAULT_IMAGE_SETTINGS,
     tokenUsage: usage,

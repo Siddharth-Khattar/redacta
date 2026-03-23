@@ -18,7 +18,8 @@ CRITICAL REQUIREMENTS:
 2. Include the correct page number (1-indexed)
 3. For ambiguous cases, include surrounding context
 4. ${guidance}
-5. Return valid JSON matching the RedactionResponse schema
+5. Classify each target with a category: PERSON, ORG, ADDRESS, PHONE, EMAIL, DATE, ID, ACCOUNT, AMOUNT, or OTHER
+6. Return valid JSON matching the RedactionResponse schema
 
 Example output format:
 {
@@ -26,12 +27,14 @@ Example output format:
     {
       "text": "John Smith",
       "page": 1,
-      "context": "Plaintiff John Smith filed a complaint"
+      "context": "Plaintiff John Smith filed a complaint",
+      "category": "PERSON"
     },
     {
       "text": "555-1234",
       "page": 2,
-      "context": "Contact at 555-1234 for further"
+      "context": "Contact at 555-1234 for further",
+      "category": "PHONE"
     }
   ],
   "reasoning": "Redacted personal names and phone numbers as requested"
@@ -50,6 +53,6 @@ REDACTION INSTRUCTIONS:
 ${redactionPrompt}
 
 Identify all text segments that match the redaction criteria. Return a JSON object with:
-- targets: array of {text, page, context} objects
+- targets: array of {text, page, context, category} objects where category is one of: PERSON, ORG, ADDRESS, PHONE, EMAIL, DATE, ID, ACCOUNT, AMOUNT, or OTHER
 - reasoning: brief explanation of your decisions`;
 }
