@@ -23,6 +23,7 @@ import { ScanOverlay } from "../components/ScanOverlay";
 import type { ProviderId } from "../engine/providers/types";
 import { RedactionEngineError } from "../engine/types";
 import type { ProviderKeys } from "../hooks/useProviderKeys";
+import type { ProcessingContext } from "../lib/audit-log";
 import { loadPdf, storePdf } from "../lib/pdf-store";
 
 type WorkspaceState = "workspace" | "processing" | "result" | "error";
@@ -47,6 +48,7 @@ export function WorkspacePage({
   const [lastMode, setLastMode] = useState<ProcessingMode>("redact");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<RedactionResponse | null>(null);
+  const [processingContext, setProcessingContext] = useState<ProcessingContext | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const pdfPanelRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -98,6 +100,7 @@ export function WorkspacePage({
       highlightColor: HighlightColor,
       redactImages: boolean,
       thorough: boolean,
+      presetId: string | null,
     ) => {
       const apiKey = keys[providerId];
       if (!file || !apiKey) return;
@@ -109,6 +112,19 @@ export function WorkspacePage({
       setLastMode(mode);
       setState("processing");
       setResult(null);
+      setProcessingContext({
+        prompt,
+        mode,
+        permanent,
+        providerId,
+        modelId,
+        thinkingLevel,
+        highlightColor,
+        redactImages,
+        thorough,
+        presetId,
+        startedAt: new Date().toISOString(),
+      });
       setErrorMessage(null);
 
       try {
@@ -261,6 +277,8 @@ export function WorkspacePage({
           result={result}
           originalFileName={file.name}
           onRedactAgain={handleRedactAgain}
+          file={file}
+          processingContext={processingContext}
         />
       )}
     </motion.div>

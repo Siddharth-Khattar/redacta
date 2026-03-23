@@ -1,14 +1,20 @@
 // ABOUTME: Bottom bar with redaction stats, usage metrics, and download/retry actions.
 // ABOUTME: Shows redaction count, token usage, cost estimate, and processing time.
 
-import { ArrowDownToLine, RotateCcw } from "lucide-react";
+import { ArrowDownToLine, ChevronUp, FileText, Loader2, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadBlob, type RedactionResponse, type RedactionTarget } from "../api/redaction";
+import { buildAuditLog, exportAsCsv, exportAsJson, type ProcessingContext } from "../lib/audit-log";
 
 interface DownloadBarProps {
   result: RedactionResponse;
   originalFileName: string;
   onRedactAgain: () => void;
+  file: File;
+  processingContext: ProcessingContext | null;
 }
+
+type ExportFormat = "json" | "csv" | "pdf";
 
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
@@ -30,7 +36,19 @@ function Dot() {
   return <span className="text-text-faint">&middot;</span>;
 }
 
-export function DownloadBar({ result, originalFileName, onRedactAgain }: DownloadBarProps) {
+const EXPORT_OPTIONS: Array<{ format: ExportFormat; label: string; ext: string }> = [
+  { format: "json", label: "JSON", ext: ".json" },
+  { format: "csv", label: "CSV", ext: ".csv" },
+  { format: "pdf", label: "PDF Report", ext: ".pdf" },
+];
+
+export function DownloadBar({
+  result,
+  originalFileName,
+  onRedactAgain,
+  file,
+  processingContext,
+}: DownloadBarProps) {
   const isPseudo = result.mode === "pseudonymise";
 
   const handleDownload = () => {
@@ -38,6 +56,61 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
     const outputName = originalFileName.replace(/\.pdf$/i, suffix);
     downloadBlob(result.redacted_pdf, outputName);
   };
+
+  // Export log dropdown state
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState<ExportFormat | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [exportMenuOpen]);
+
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      if (!processingContext) return;
+      setExportMenuOpen(false);
+      setExportLoading(format);
+
+      try {
+        const log = buildAuditLog(processingContext, result, file);
+        const baseName = originalFileName.replace(/\.pdf$/i, "");
+        let blob: Blob;
+        let filename: string;
+
+        if (format === "json") {
+          blob = exportAsJson(log);
+          filename = `${baseName}_audit_log.json`;
+        } else if (format === "csv") {
+          blob = exportAsCsv(log);
+          filename = `${baseName}_audit_log.csv`;
+        } else {
+          // Lazy-load the PDF exporter (separate chunk, loaded on first use)
+          const { exportAsPdf } = await import("../lib/audit-log-pdf");
+          blob = await exportAsPdf(log);
+          filename = `${baseName}_audit_report.pdf`;
+        }
+
+        downloadBlob(blob, filename);
+      } catch (error) {
+        // Prevent unhandled rejections from propagating to error boundaries
+        console.error("Audit log export failed:", error);
+      } finally {
+        setExportLoading(null);
+      }
+    },
+    [processingContext, result, file, originalFileName],
+  );
+
+  const canExport = processingContext !== null;
 
   const uniquePages = new Set(result.targets.map((t: RedactionTarget) => t.page)).size;
   const { usage } = result;
@@ -116,6 +189,42 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
             <RotateCcw className="w-4 h-4" />
             Again
           </button>
+          {/* Export Log dropdown */}
+          {canExport && (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setExportMenuOpen((v) => !v)}
+                disabled={exportLoading !== null}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-text-sub hover:text-text rounded-lg hover:bg-surface transition-colors"
+              >
+                {exportLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                Export Log
+                <ChevronUp
+                  className={`w-3.5 h-3.5 transition-transform ${exportMenuOpen ? "" : "rotate-180"}`}
+                />
+              </button>
+              {exportMenuOpen && (
+                <div className="absolute bottom-full mb-1 left-0 w-40 bg-raised border border-border rounded-lg shadow-lg overflow-hidden z-10">
+                  {EXPORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.format}
+                      type="button"
+                      onClick={() => handleExport(opt.format)}
+                      className="w-full px-3 py-2 text-sm text-left text-text-sub hover:text-text hover:bg-surface transition-colors"
+                    >
+                      {opt.label}
+                      <span className="text-text-faint ml-1.5">{opt.ext}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <button
             type="button"
             onClick={handleDownload}
