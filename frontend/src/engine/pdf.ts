@@ -1,7 +1,7 @@
 // ABOUTME: MuPDF WASM wrapper for client-side PDF text extraction and redaction.
 // ABOUTME: Lazy-loads the WASM module on first use via dynamic import.
 
-import type { PDFDocument, PDFPage, Quad, Rect } from "mupdf";
+import type { Document, PDFDocument, PDFPage, Quad, Rect } from "mupdf";
 import {
   type BoundingRect,
   type HighlightColor,
@@ -40,6 +40,52 @@ function quadToRect(quad: Quad): Rect {
     Math.max(x0, x1, x2, x3),
     Math.max(y0, y1, y2, y3),
   ];
+}
+
+// ── Metadata scrubbing ───────────────────────────────────────────────
+
+/** Standard PDF info dictionary keys to clear after redaction. */
+const METADATA_KEYS: string[] = [
+  "info:Title",
+  "info:Author",
+  "info:Subject",
+  "info:Keywords",
+  "info:Creator",
+  "info:Producer",
+  "info:CreationDate",
+  "info:ModDate",
+];
+
+/**
+ * Scrub all document-level metadata from a PDF.
+ *
+ * Clears the standard info dictionary fields (Title, Author, Subject, etc.)
+ * and attempts to remove XMP metadata by deleting the Metadata stream from
+ * the PDF trailer/catalog.
+ */
+function scrubMetadata(doc: Document, pdfDoc: PDFDocument): void {
+  // Clear standard info dictionary fields via the Document API
+  for (const key of METADATA_KEYS) {
+    try {
+      doc.setMetaData(key, "");
+    } catch {
+      // setMetaData may not support all keys; skip gracefully
+    }
+  }
+
+  // Attempt to remove XMP metadata stream from the PDF catalog.
+  // The catalog is accessed via the trailer's "Root" entry, and XMP metadata
+  // is stored under the "Metadata" key in the catalog dictionary.
+  try {
+    const trailer = pdfDoc.getTrailer();
+    const catalog = trailer.get("Root");
+    if (catalog && !catalog.isNull()) {
+      catalog.delete("Metadata");
+    }
+  } catch {
+    // If trailer/catalog access fails, skip XMP removal gracefully.
+    // MuPDF's WASM build may not expose full low-level PDF object manipulation.
+  }
 }
 
 // ── Image fill color mapping ──────────────────────────────────────────
@@ -305,6 +351,8 @@ export async function applyRedactions(
       }
     }
 
+    scrubMetadata(doc, pdfDoc);
+
     const buffer = pdfDoc.saveToBuffer("compress");
     return buffer.asUint8Array();
   } finally {
@@ -447,6 +495,8 @@ export async function applyPseudonymisation(
         annot.update();
       }
     }
+
+    scrubMetadata(doc, pdfDoc);
 
     const buffer = pdfDoc.saveToBuffer("compress");
     return buffer.asUint8Array();
