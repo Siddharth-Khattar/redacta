@@ -7,7 +7,7 @@
 **AI-powered PDF redaction and pseudonymisation, entirely in your browser.**
 
 Describe what to redact in plain language. AI identifies it. MuPDF removes it permanently.
-Your documents never leave your device.
+Your PDFs never leave your device.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-e2dfd8?style=flat-square)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
@@ -46,7 +46,7 @@ flowchart LR
 4. **Choose** to permanently redact (black out) or pseudonymise (replace with realistic fakes)
 5. **Download** the redacted document with original formatting preserved
 
-Everything happens client-side. The PDF is processed by MuPDF compiled to WebAssembly, and AI providers are called directly from your browser using your own API key. No backend. No server. No data leaves your machine.
+PDF processing happens client-side via MuPDF compiled to WebAssembly. AI providers are called directly from your browser using your own API key. Your PDFs never leave your device.
 
 ---
 
@@ -155,7 +155,7 @@ graph TD
     style HOST fill:#30303a,stroke:#30303a,color:#e2dfd8
 ```
 
-The entire application compiles to static files that can be served by any static hosting provider. There is no server-side code.
+The frontend compiles to static files that can be served by any static hosting provider.
 
 ---
 
@@ -163,9 +163,9 @@ The entire application compiles to static files that can be served by any static
 
 | Concern | How it's handled |
 |---|---|
-| **PDF content** | Processed in-browser via WASM. Never uploaded anywhere. |
+| **PDF files** | Processed in-browser via WASM. Your PDFs are never uploaded anywhere. |
 | **API keys** | Stored per-provider in `localStorage`. Sent only to the respective AI provider. |
-| **AI requests** | Direct browser-to-API calls. No proxy, no middleman. |
+| **AI requests (BYOK)** | Direct browser-to-API calls. No proxy, no middleman. |
 | **Redacted output** | Exists only in browser memory until downloaded. |
 | **Analytics / tracking** | None. Zero telemetry. |
 | **CSP** | Strict Content-Security-Policy. Only allows Gemini API and OpenRouter. |

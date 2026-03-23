@@ -87,11 +87,7 @@ export function LandingPage() {
                 <span className="text-border">✦</span>
                 <span>Free &amp; Open Source</span>
                 <span className="text-border">✦</span>
-                <span>GDPR Compliant</span>
-                <span className="text-border">✦</span>
-                <span>HIPAA Compliant</span>
-                <span className="text-border">✦</span>
-                <span>CCPA / CPRA</span>
+                <span>PDFs Never Leave Your Browser</span>
                 <span className="text-border">✦</span>
                 <span>No Subscriptions</span>
                 <span className="text-border">✦</span>
@@ -99,7 +95,7 @@ export function LandingPage() {
                 <span className="text-border">✦</span>
                 <span>No Software Installation</span>
                 <span className="text-border">✦</span>
-                <span>Zero Data Retention</span>
+                <span>BYOK: Your Keys, Your Data</span>
                 <span className="text-border">✦</span>
                 <span>Works Offline After Load</span>
                 <span className="text-border">✦</span>
@@ -118,7 +114,7 @@ export function LandingPage() {
 
           {/* Frosted glass card */}
           <div className="rounded-2xl border border-border-subtle/60 bg-bg/40 backdrop-blur-xl shadow-lg p-6 md:p-8">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-text tracking-tight leading-tight mb-4 stagger-1">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-text tracking-tight leading-tight mb-4 stagger-1">
               AI-Powered
               <br />
               <span className="text-redact">Document Redaction</span>
@@ -129,7 +125,7 @@ export function LandingPage() {
               <span className="text-redact font-medium">redacts</span> or{" "}
               <span className="text-pseudo font-medium">pseudonymises</span> matching text and
               images, entirely in your browser.{" "}
-              <span className="text-text">Bring your own API key</span>, your data never leaves your
+              <span className="text-text">Bring your own API key</span>. Your PDFs never leave your
               device.
             </p>
 

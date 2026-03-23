@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#1c1c20" />
     <meta
       name="description"
-      content="Free AI PDF redaction tool. Permanently redact or pseudonymise PII in text and images. No signup, runs in your browser. GDPR, HIPAA, CCPA compliant."
+      content="Free AI PDF redaction tool. Permanently redact or pseudonymise PII in text and images. No signup, runs in your browser. Your PDFs never leave your device."
     />
 
     <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com" />
@@ -49,7 +49,7 @@
           language, and AI automatically detects and redacts matching personally
           identifiable information (PII) across text and images. No signup, no
           installation, no watermarks. All processing happens locally in your
-          browser using your own API key. Your files are never uploaded to any
+          browser using your own API key. Your PDFs are never uploaded to any
           server.
         </p>
 
@@ -88,21 +88,18 @@
           <li>
             <strong>Document Pseudonymisation (De-identification)</strong>:
             Replace real names, addresses, and identifiers with realistic
-            fictional alternatives instead of blacking them out. Ideal for GDPR
-            compliance, HIPAA de-identification, legal review, training data,
-            and blind recruitment.
+            fictional alternatives instead of blacking them out. Ideal for legal review, compliance workflows, training data, and blind recruitment.
           </li>
           <li>
-            <strong>100% Client-Side Processing</strong>: Your documents never
-            leave your browser. Processing uses JavaScript, WebAssembly (MuPDF),
-            and direct API calls to AI providers. There is no backend server. No
-            data is stored or transmitted.
+            <strong>Client-Side PDF Processing</strong>: Your PDFs never
+            leave your browser. PDF parsing and redaction use WebAssembly (MuPDF)
+            entirely in-browser.
           </li>
           <li>
             <strong>Bring Your Own API Key (BYOK)</strong>: Use your own Google
             Gemini or OpenAI API key. No account creation, no signup, no
-            subscriptions, no watermarks. No middleman between you and the AI
-            provider.
+            subscriptions, no watermarks. Your data goes directly to
+            the AI provider.
           </li>
           <li>
             <strong>PDF Structure Preservation</strong>: Redacted documents
@@ -123,9 +120,7 @@
           Law firms and legal professionals use Redacta to redact privileged
           information, client names, case numbers, and confidential details from
           court filings, contracts, depositions, and discovery documents before
-          sharing with opposing counsel or filing publicly. The client-side
-          architecture ensures sensitive legal documents are never transmitted
-          to third-party servers.
+          sharing with opposing counsel or filing publicly. Your PDFs are never transmitted to third-party servers.
         </p>
 
         <h3>CV and Resume Redaction for Blind Recruitment</h3>
@@ -137,15 +132,12 @@
           organisations reduce unconscious bias in their recruitment processes.
         </p>
 
-        <h3>GDPR, HIPAA, and CCPA Compliance</h3>
+        <h3>Privacy and Compliance Workflows</h3>
         <p>
           Organisations use Redacta to pseudonymise and de-identify personal
-          data in documents for GDPR compliance, HIPAA compliance, and CCPA/CPRA
-          compliance. Common use cases include fulfilling data subject access
-          requests (DSARs/SARs), preparing documents for third-party sharing,
-          and anonymising training data. Pseudonymisation is specifically
-          recognised under GDPR Article 4(5) as a data protection technique, and
-          de-identification is required under the HIPAA Privacy Rule.
+          data in documents for regulatory compliance workflows. Common use
+          cases include fulfilling data subject access requests, preparing
+          documents for third-party sharing, and anonymising training data.
         </p>
 
         <h3>Healthcare and Medical Record De-identification</h3>
@@ -153,9 +145,7 @@
           Healthcare providers and researchers use Redacta to de-identify and
           redact protected health information (PHI) and patient identifiers from
           medical records, clinical trial documents, research papers, and
-          insurance forms. The client-side architecture ensures PHI is never
-          transmitted to external servers, supporting HIPAA Safe Harbor
-          de-identification requirements.
+          insurance forms.
         </p>
 
         <h3>Financial Document Redaction</h3>
@@ -178,11 +168,10 @@
         <h3>What is Redacta?</h3>
         <p>
           Redacta is a free, open-source, AI-powered PDF redaction and
-          pseudonymisation (de-identification) tool that runs entirely in your
-          browser. You describe what to remove in plain language, and AI (Gemini
-          or OpenAI) automatically detects and permanently redacts matching PII
-          in text and images. No signup, no installation, no watermarks. Your
-          documents never leave your device.
+          pseudonymisation (de-identification) tool. You describe what to remove
+          in plain language, and AI (Gemini or OpenAI) automatically detects and
+          permanently redacts matching PII in text and images. No signup, no
+          installation, no watermarks. Your PDFs never leave your device.
         </p>
 
         <h3>How does AI PDF redaction work?</h3>
@@ -196,11 +185,10 @@
 
         <h3>Is my data safe with Redacta?</h3>
         <p>
-          Yes. Redacta processes everything client-side in your browser using
-          JavaScript and WebAssembly (MuPDF). Your PDF files are never uploaded
-          to any server. AI analysis runs via direct API calls from your browser
-          to the AI provider using your own API key. There is no backend or
-          middleman.
+          Your PDF files are never uploaded to any server. All PDF processing
+          happens client-side via WebAssembly (MuPDF). AI requests go directly
+          from your browser to the provider using your own API key. There is no
+          backend or middleman.
         </p>
 
         <h3>What is document pseudonymisation?</h3>
@@ -209,18 +197,16 @@
           identifiable information with realistic but fictional alternatives.
           For example, real names become fictional names, real addresses become
           fictional addresses. This preserves document readability while
-          protecting privacy. It is commonly used for GDPR compliance, HIPAA
-          de-identification, legal review, training data preparation, DSAR
-          fulfilment, and blind recruitment.
+          protecting privacy. It is commonly used for legal review, training data preparation,
+          compliance workflows, and blind recruitment.
         </p>
 
         <h3>What does "bring your own API key" (BYOK) mean?</h3>
         <p>
-          Redacta does not have its own AI backend. You provide your own API key
-          from Google Gemini or OpenAI. This means no middleman handles your
-          data, no account to create on Redacta, and you only pay the AI
-          provider's standard API rates, typically fractions of a cent per
-          document.
+          You provide your own API key from Google Gemini or OpenAI. Your data
+          goes directly to the AI provider with no middleman, no account to
+          create on Redacta, and you only pay the AI provider's standard API
+          rates, typically fractions of a cent per document.
         </p>
 
         <h3>Can Redacta redact images in PDFs?</h3>
@@ -235,9 +221,8 @@
         <p>
           Yes. Law firms and legal professionals use Redacta to redact
           privileged information, client names, case details, and confidential
-          data from court filings, contracts, and discovery documents. The
-          client-side architecture ensures sensitive legal documents are never
-          transmitted to third-party servers.
+          data from court filings, contracts, and discovery documents. Your PDFs are never transmitted
+          to third-party servers.
         </p>
 
         <h3>Can I use Redacta for CV or resume redaction?</h3>

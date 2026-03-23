@@ -65,9 +65,9 @@ const svg = `
     <rect x="-10" y="0" width="160" height="36" rx="18" fill="#222228" stroke="#30303a" stroke-width="1"/>
     <text x="70" y="24" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="500" fill="#a8a4a0">Bring Your Own Key</text>
 
-    <!-- Compliance -->
+    <!-- Open Source -->
     <rect x="170" y="0" width="170" height="36" rx="18" fill="#222228" stroke="#30303a" stroke-width="1"/>
-    <text x="255" y="24" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="500" fill="#a8a4a0">GDPR · HIPAA · CCPA</text>
+    <text x="255" y="24" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="500" fill="#a8a4a0">Free · Open Source</text>
   </g>
 
   <!-- Redact demo bar -->
