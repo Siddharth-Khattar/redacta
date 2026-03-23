@@ -23,7 +23,6 @@ CRITICAL REQUIREMENTS:
 7. Different entities of the same category get incrementing numbers
    (e.g., "John Smith" → [PERSON_1], "Jane Doe" → [PERSON_2])
 8. Return valid JSON matching the PseudonymisationResponse schema
-9. Never return an empty targets array if the document clearly contains matching content
 
 Example output format:
 {

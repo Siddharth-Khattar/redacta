@@ -17,7 +17,6 @@ CRITICAL REQUIREMENTS:
 3. For ambiguous cases, include surrounding context
 4. Be conservative - only redact what clearly matches the criteria
 5. Return valid JSON matching the RedactionResponse schema
-6. Never return an empty targets array if the document clearly contains matching content
 
 Example output format:
 {

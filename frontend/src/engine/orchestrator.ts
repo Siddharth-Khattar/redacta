@@ -81,43 +81,97 @@ export async function runRedactionPipeline(
       let totalTokens = 0;
       let totalDuration = 0;
 
+      // Build chunk text maps upfront
+      const chunks: Map<number, string>[] = [];
       for (let i = 0; i < pageNumbers.length; i += PAGES_PER_CHUNK) {
         const chunkPages = pageNumbers.slice(i, i + PAGES_PER_CHUNK);
         const chunkText = new Map<number, string>();
         for (const p of chunkPages) {
           chunkText.set(p, pdfText.get(p)!);
         }
+        chunks.push(chunkText);
+      }
 
-        // For pseudonymisation, pass accumulated mappings from prior chunks
-        // so the AI reuses the same labels for recurring entities.
-        const priorMappings =
-          mode === "pseudonymise" && Object.keys(allMappings).length > 0
-            ? allMappings
-            : undefined;
-
-        const chunkResult = await provider.identifyTargets(
-          apiKey,
-          modelId,
-          chunkText,
-          prompt,
-          thinkingLevel,
-          mode,
-          priorMappings,
+      if (mode !== "pseudonymise") {
+        // Redaction mode: no cross-chunk dependency, run in parallel
+        const chunkResults = await Promise.all(
+          chunks.map((chunkText) =>
+            provider.identifyTargets(apiKey, modelId, chunkText, prompt, thinkingLevel, mode),
+          ),
         );
 
-        allTargets.push(...chunkResult.result.targets);
-        if (chunkResult.result.mapping) {
-          Object.assign(allMappings, chunkResult.result.mapping);
+        for (const chunkResult of chunkResults) {
+          allTargets.push(...chunkResult.result.targets);
+          if (chunkResult.result.reasoning) {
+            reasonings.push(chunkResult.result.reasoning);
+          }
+          totalInput += chunkResult.usage.inputTokens;
+          totalOutput += chunkResult.usage.outputTokens;
+          totalThinking += chunkResult.usage.thinkingTokens;
+          totalTokens += chunkResult.usage.totalTokens;
+          totalDuration += chunkResult.usage.durationMs;
         }
-        if (chunkResult.result.reasoning) {
-          reasonings.push(chunkResult.result.reasoning);
+      } else {
+        // Pseudonymise mode: sequential to accumulate mappings across chunks
+        for (const chunkText of chunks) {
+          const priorMappings =
+            Object.keys(allMappings).length > 0 ? allMappings : undefined;
+
+          const chunkResult = await provider.identifyTargets(
+            apiKey,
+            modelId,
+            chunkText,
+            prompt,
+            thinkingLevel,
+            mode,
+            priorMappings,
+          );
+
+          allTargets.push(...chunkResult.result.targets);
+          if (chunkResult.result.mapping) {
+            Object.assign(allMappings, chunkResult.result.mapping);
+          }
+          if (chunkResult.result.reasoning) {
+            reasonings.push(chunkResult.result.reasoning);
+          }
+
+          totalInput += chunkResult.usage.inputTokens;
+          totalOutput += chunkResult.usage.outputTokens;
+          totalThinking += chunkResult.usage.thinkingTokens;
+          totalTokens += chunkResult.usage.totalTokens;
+          totalDuration += chunkResult.usage.durationMs;
         }
 
-        totalInput += chunkResult.usage.inputTokens;
-        totalOutput += chunkResult.usage.outputTokens;
-        totalThinking += chunkResult.usage.thinkingTokens;
-        totalTokens += chunkResult.usage.totalTokens;
-        totalDuration += chunkResult.usage.durationMs;
+        // Post-processing: deduplicate pseudonym mappings.
+        // If chunk N assigns a different pseudonym to an entity already seen in
+        // an earlier chunk, normalise to the first-seen pseudonym.
+        const textToFirstPseudonym = new Map<string, string>();
+        for (const [label, originalText] of Object.entries(allMappings)) {
+          if (!textToFirstPseudonym.has(originalText)) {
+            textToFirstPseudonym.set(originalText, label);
+          }
+        }
+
+        // Remap targets that got duplicate pseudonyms
+        for (const target of allTargets) {
+          if (target.pseudonym) {
+            const canonicalLabel = textToFirstPseudonym.get(target.text);
+            if (canonicalLabel && target.pseudonym !== canonicalLabel) {
+              target.pseudonym = canonicalLabel;
+            }
+          }
+        }
+
+        // Rebuild allMappings keeping only first-seen labels
+        const deduplicatedMappings: Record<string, string> = {};
+        for (const [originalText, firstLabel] of textToFirstPseudonym) {
+          deduplicatedMappings[firstLabel] = originalText;
+        }
+        // Replace allMappings contents
+        for (const key of Object.keys(allMappings)) {
+          delete allMappings[key];
+        }
+        Object.assign(allMappings, deduplicatedMappings);
       }
 
       redactionResult = {

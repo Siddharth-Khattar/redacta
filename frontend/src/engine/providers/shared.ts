@@ -10,9 +10,9 @@ export interface RetryConfig {
 }
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxAttempts: 3,
-  initialWaitMs: 5_000,
-  maxWaitMs: 30_000,
+  maxAttempts: 4,
+  initialWaitMs: 30_000,
+  maxWaitMs: 120_000,
 };
 
 /**
