@@ -1,12 +1,13 @@
 // ABOUTME: Bottom bar with redaction stats, usage metrics, and download/retry actions.
 // ABOUTME: Shows redaction count, token usage, cost estimate, and processing time.
 
-import { ArrowDownToLine, RotateCcw } from "lucide-react";
+import { ArrowDownToLine, FileText, RotateCcw } from "lucide-react";
 import { downloadFromBase64, type RedactionResponse, type RedactionTarget } from "../api/redaction";
 
 interface DownloadBarProps {
   result: RedactionResponse;
   originalFileName: string;
+  prompt: string;
   onRedactAgain: () => void;
 }
 
@@ -30,13 +31,69 @@ function Dot() {
   return <span className="text-text-faint">&middot;</span>;
 }
 
-export function DownloadBar({ result, originalFileName, onRedactAgain }: DownloadBarProps) {
+function downloadJson(data: object, filename: string): void {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function DownloadBar({ result, originalFileName, prompt, onRedactAgain }: DownloadBarProps) {
   const isPseudo = result.mode === "pseudonymise";
 
   const handleDownload = () => {
     const suffix = isPseudo ? "_pseudonymised.pdf" : "_redacted.pdf";
     const outputName = originalFileName.replace(/\.pdf$/i, suffix);
     downloadFromBase64(result.redacted_pdf, outputName);
+  };
+
+  const handleExportLog = () => {
+    const { usage } = result;
+
+    const appliedCount =
+      "applied_count" in result ? (result as Record<string, unknown>).applied_count : undefined;
+    const missedTargets =
+      "missed_targets" in result ? (result as Record<string, unknown>).missed_targets : undefined;
+
+    const applied = typeof appliedCount === "number" ? appliedCount : result.redaction_count;
+    const missed = Array.isArray(missedTargets) ? missedTargets.length : 0;
+
+    const log: Record<string, unknown> = {
+      source_file: originalFileName,
+      timestamp: new Date().toISOString(),
+      mode: result.mode,
+      model: usage.model,
+      prompt,
+      targets: result.targets.map((t: RedactionTarget) => ({
+        text: t.text,
+        page: t.page,
+        context: t.context,
+        ...(t.pseudonym ? { pseudonym: t.pseudonym } : {}),
+      })),
+      ...(Array.isArray(missedTargets) && missedTargets.length > 0
+        ? { missed_targets: missedTargets }
+        : {}),
+      ...(isPseudo && result.mapping ? { mapping: result.mapping } : {}),
+      stats: {
+        identified: result.targets.length,
+        applied,
+        missed,
+      },
+      usage: {
+        tokens: usage.total_tokens,
+        cost_usd: usage.estimated_cost_usd,
+        duration_ms: usage.total_duration_ms,
+      },
+    };
+
+    const logFileName = originalFileName.replace(/\.pdf$/i, "_audit_log.json");
+    downloadJson(log, logFileName);
   };
 
   const uniquePages = new Set(result.targets.map((t: RedactionTarget) => t.page)).size;
@@ -115,6 +172,14 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
           >
             <RotateCcw className="w-4 h-4" />
             Again
+          </button>
+          <button
+            type="button"
+            onClick={handleExportLog}
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-text-sub hover:text-text rounded-lg hover:bg-surface transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            Export Log
           </button>
           <button
             type="button"

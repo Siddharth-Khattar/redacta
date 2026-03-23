@@ -45,6 +45,7 @@ export function WorkspacePage({
   const [, navigate] = useLocation();
   const [state, setState] = useState<WorkspaceState>("workspace");
   const [lastMode, setLastMode] = useState<ProcessingMode>("redact");
+  const [lastPrompt, setLastPrompt] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<RedactionResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -106,6 +107,7 @@ export function WorkspacePage({
       abortControllerRef.current = controller;
 
       setLastMode(mode);
+      setLastPrompt(prompt);
       setState("processing");
       setErrorMessage(null);
 
@@ -257,6 +259,7 @@ export function WorkspacePage({
         <DownloadBar
           result={result}
           originalFileName={file.name}
+          prompt={lastPrompt}
           onRedactAgain={handleRedactAgain}
         />
       )}
