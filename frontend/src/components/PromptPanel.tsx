@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import type { HighlightColor, ProcessingMode } from "../api/redaction";
+import { getPresetById, REDACTION_PRESETS } from "../engine/presets";
 import {
   getDefaultThinkingLevel,
   getModelDefinition,
@@ -76,6 +77,7 @@ interface PromptPanelProps {
     thinkingLevel: string,
     highlightColor: HighlightColor,
     redactImages: boolean,
+    thorough: boolean,
   ) => void;
 }
 
@@ -114,6 +116,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
   const [selectedModel, setSelectedModel] = useState(resolvedModel);
   const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel>(resolvedThinking);
 
+  const [activePreset, setActivePreset] = useState<string | null>(null);
   const [showModelSettings, setShowModelSettings] = useState(false);
 
   // Persist settings on change
@@ -154,6 +157,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
 
   const handleSubmit = () => {
     if (canSubmit) {
+      const thorough = activePreset ? (getPresetById(activePreset)?.thorough ?? false) : false;
       onSubmit(
         prompt.trim(),
         mode,
@@ -163,6 +167,7 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
         thinkingLevel,
         highlightColor,
         redactImages,
+        thorough,
       );
     }
   };
@@ -186,10 +191,40 @@ export function PromptPanel({ configuredProviders, onSubmit }: PromptPanelProps)
           </p>
         </div>
 
+        {/* Preset chips */}
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {REDACTION_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              title={preset.description}
+              onClick={() => {
+                setPrompt(preset.prompt);
+                setActivePreset(preset.id);
+              }}
+              className={`
+                px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-150
+                ${
+                  activePreset === preset.id
+                    ? mode === "redact"
+                      ? "bg-redact/10 text-redact ring-1 ring-redact/30"
+                      : "bg-pseudo/10 text-pseudo ring-1 ring-pseudo/30"
+                    : "bg-surface text-text-dim hover:text-text-sub hover:bg-surface-hover"
+                }
+              `}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+
         {/* Prompt */}
         <textarea
           value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          onChange={(e) => {
+            setPrompt(e.target.value);
+            setActivePreset(null);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={
             mode === "redact"
