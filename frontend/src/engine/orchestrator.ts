@@ -29,6 +29,7 @@ import {
  * @param mode           - Processing mode: redact or pseudonymise
  * @param highlightColor - Background color for pseudonymisation labels
  * @param redactImages   - If true, detect and redact all images on every page
+ * @param thorough       - If true, use thorough (not conservative) system prompt
  */
 export async function runRedactionPipeline(
   apiKey: string,
@@ -41,6 +42,7 @@ export async function runRedactionPipeline(
   mode: ProcessingMode = "redact",
   highlightColor: HighlightColor = "white",
   redactImages = false,
+  thorough = false,
 ): Promise<RedactionPipelineResult> {
   const startTime = performance.now();
   const pdfBytes = await file.arrayBuffer();
@@ -59,6 +61,7 @@ export async function runRedactionPipeline(
       prompt,
       thinkingLevel,
       mode,
+      thorough,
     );
     redactionResult = llmResult.result;
     usage = llmResult.usage;

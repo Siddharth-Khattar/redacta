@@ -1,7 +1,15 @@
 // ABOUTME: System prompt and message builder for the pseudonymisation processing mode.
 // ABOUTME: Instructs the LLM to identify PII and assign consistent category-based pseudonym labels.
 
-export const SYSTEM_INSTRUCTION = `\
+const CONSERVATIVE_GUIDANCE =
+  "Be conservative - only pseudonymise what clearly matches the criteria";
+const THOROUGH_GUIDANCE =
+  "Be thorough - identify all information matching the criteria, erring on the side of inclusion rather than omission";
+
+export function getSystemInstruction(thorough = false): string {
+  const guidance = thorough ? THOROUGH_GUIDANCE : CONSERVATIVE_GUIDANCE;
+
+  return `\
 You are a precise document pseudonymisation assistant. \
 Your task is to identify EXACT text segments containing personally identifiable \
 information (PII) or sensitive data and assign consistent pseudonym labels.
@@ -10,7 +18,7 @@ CRITICAL REQUIREMENTS:
 1. Return EXACT text as it appears in the document (word-for-word)
 2. Include the correct page number (1-indexed)
 3. For ambiguous cases, include surrounding context
-4. Be conservative - only pseudonymise what clearly matches the criteria
+4. ${guidance}
 5. Assign pseudonym labels using the format [CATEGORY_N] where CATEGORY is one of:
    PERSON, ORG, ADDRESS, PHONE, EMAIL, DATE, ID, ACCOUNT, AMOUNT
 6. The same entity must always receive the same pseudonym label throughout the document
@@ -47,6 +55,7 @@ Example output format:
   },
   "reasoning": "Pseudonymised personal names and phone numbers as requested"
 }`;
+}
 
 export function buildUserMessage(pdfText: Map<number, string>, redactionPrompt: string): string {
   const pdfContent = Array.from(pdfText.entries())

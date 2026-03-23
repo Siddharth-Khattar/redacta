@@ -97,6 +97,7 @@ export function WorkspacePage({
       thinkingLevel: string,
       highlightColor: HighlightColor,
       redactImages: boolean,
+      thorough: boolean,
     ) => {
       const apiKey = keys[providerId];
       if (!file || !apiKey) return;
@@ -122,6 +123,7 @@ export function WorkspacePage({
           mode,
           highlightColor,
           redactImages,
+          thorough,
         );
 
         if (controller.signal.aborted) return;

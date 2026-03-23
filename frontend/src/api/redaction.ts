@@ -73,6 +73,7 @@ export async function redactPdf(
   mode: ProcessingMode = "redact",
   highlightColor: HighlightColor = "white",
   redactImages = false,
+  thorough = false,
 ): Promise<RedactionResponse> {
   try {
     const result = await runRedactionPipeline(
@@ -86,6 +87,7 @@ export async function redactPdf(
       mode,
       highlightColor,
       redactImages,
+      thorough,
     );
 
     return {

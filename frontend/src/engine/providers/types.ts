@@ -33,6 +33,7 @@ export interface RedactionProvider {
     redactionPrompt: string,
     thinkingLevel: string,
     mode: ProcessingMode,
+    thorough?: boolean,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }>;
 
   validateApiKey(apiKey: string): Promise<boolean>;

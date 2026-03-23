@@ -5,10 +5,10 @@ import type { ProcessingMode } from "../types";
 import * as pseudonymisation from "./pseudonymisation";
 import * as redaction from "./redaction";
 
-export function getSystemInstruction(mode: ProcessingMode): string {
+export function getSystemInstruction(mode: ProcessingMode, thorough = false): string {
   return mode === "pseudonymise"
-    ? pseudonymisation.SYSTEM_INSTRUCTION
-    : redaction.SYSTEM_INSTRUCTION;
+    ? pseudonymisation.getSystemInstruction(thorough)
+    : redaction.getSystemInstruction(thorough);
 }
 
 export function buildUserMessage(

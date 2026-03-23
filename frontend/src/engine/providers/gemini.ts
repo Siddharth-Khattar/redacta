@@ -100,6 +100,7 @@ export class GeminiProvider implements RedactionProvider {
     redactionPrompt: string,
     thinkingLevel: string,
     mode: ProcessingMode,
+    thorough = false,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }> {
     const genai = await loadGenAI();
     const ai = new genai.GoogleGenAI({ apiKey });
@@ -125,7 +126,7 @@ export class GeminiProvider implements RedactionProvider {
             model,
             contents: userMessage,
             config: {
-              systemInstruction: getSystemInstruction(mode),
+              systemInstruction: getSystemInstruction(mode, thorough),
               responseMimeType: "application/json",
               thinkingConfig,
             },

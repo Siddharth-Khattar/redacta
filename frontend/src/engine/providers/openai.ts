@@ -77,6 +77,7 @@ export class OpenAIProvider implements RedactionProvider {
     redactionPrompt: string,
     thinkingLevel: string,
     mode: ProcessingMode,
+    thorough = false,
   ): Promise<{ result: RedactionResult; usage: TokenUsage }> {
     const userMessage = buildUserMessage(mode, pdfText, redactionPrompt);
     const effort = REASONING_EFFORT_MAP[thinkingLevel] ?? "low";
@@ -89,7 +90,7 @@ export class OpenAIProvider implements RedactionProvider {
           const body: Record<string, unknown> = {
             model,
             messages: [
-              { role: "system", content: getSystemInstruction(mode) },
+              { role: "system", content: getSystemInstruction(mode, thorough) },
               { role: "user", content: userMessage },
             ],
             response_format: { type: "json_object" },
