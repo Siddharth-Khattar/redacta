@@ -107,6 +107,7 @@ export function WorkspacePage({
 
       setLastMode(mode);
       setState("processing");
+      setResult(null);
       setErrorMessage(null);
 
       try {

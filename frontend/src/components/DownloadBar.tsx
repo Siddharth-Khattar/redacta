@@ -2,7 +2,7 @@
 // ABOUTME: Shows redaction count, token usage, cost estimate, and processing time.
 
 import { ArrowDownToLine, RotateCcw } from "lucide-react";
-import { downloadFromBase64, type RedactionResponse, type RedactionTarget } from "../api/redaction";
+import { downloadBlob, type RedactionResponse, type RedactionTarget } from "../api/redaction";
 
 interface DownloadBarProps {
   result: RedactionResponse;
@@ -36,7 +36,7 @@ export function DownloadBar({ result, originalFileName, onRedactAgain }: Downloa
   const handleDownload = () => {
     const suffix = isPseudo ? "_pseudonymised.pdf" : "_redacted.pdf";
     const outputName = originalFileName.replace(/\.pdf$/i, suffix);
-    downloadFromBase64(result.redacted_pdf, outputName);
+    downloadBlob(result.redacted_pdf, outputName);
   };
 
   const uniquePages = new Set(result.targets.map((t: RedactionTarget) => t.page)).size;

@@ -38,7 +38,7 @@ export interface UsageStats {
 }
 
 export interface RedactionResponse {
-  redacted_pdf: string;
+  redacted_pdf: Blob;
   redaction_count: number;
   targets: RedactionTarget[];
   reasoning: string | null;
@@ -52,16 +52,10 @@ export interface RedactionResponse {
   usage: UsageStats;
 }
 
-/** Convert a Uint8Array to a base64 string. */
-function uint8ArrayToBase64(bytes: Uint8Array): string {
-  // Process in chunks to avoid call stack overflow on large PDFs
-  const chunkSize = 8192;
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
-    binary += String.fromCharCode(...chunk);
-  }
-  return btoa(binary);
+/** Convert a Uint8Array to an immutable PDF Blob (zero-copy). */
+function uint8ArrayToBlob(bytes: Uint8Array): Blob {
+  // WASM memory always uses standard ArrayBuffer; narrow the type for BlobPart compatibility
+  return new Blob([bytes as Uint8Array<ArrayBuffer>], { type: "application/pdf" });
 }
 
 /**
@@ -95,7 +89,7 @@ export async function redactPdf(
     );
 
     return {
-      redacted_pdf: uint8ArrayToBase64(result.redactedPdf),
+      redacted_pdf: uint8ArrayToBlob(result.redactedPdf),
       redaction_count: result.redactionCount,
       targets: result.targets.map((t) => ({
         text: t.text,
@@ -135,29 +129,9 @@ export async function redactPdf(
 }
 
 /**
- * Convert a base64 string to a blob URL for PDF display.
- * Caller is responsible for revoking the URL via URL.revokeObjectURL.
+ * Trigger a browser download from a Blob.
  */
-export function base64ToBlobUrl(base64: string): string {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  const blob = new Blob([bytes], { type: "application/pdf" });
-  return URL.createObjectURL(blob);
-}
-
-/**
- * Trigger a browser download from a blob URL or base64 data.
- */
-export function downloadFromBase64(base64: string, filename: string): void {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  const blob = new Blob([bytes], { type: "application/pdf" });
+export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -190,7 +164,7 @@ export async function reapplySettings(
   highlightColor: HighlightColor,
   imageTargets: ImageTarget[],
   imageSettings: ImageRedactionSettings | null,
-): Promise<string> {
+): Promise<Blob> {
   const pdfBytes = await file.arrayBuffer();
 
   const redactedPdf =
@@ -198,5 +172,5 @@ export async function reapplySettings(
       ? await applyPseudonymisation(pdfBytes, targets, highlightColor, imageTargets, imageSettings)
       : await applyRedactions(pdfBytes, targets, permanent, imageTargets, imageSettings);
 
-  return uint8ArrayToBase64(redactedPdf);
+  return uint8ArrayToBlob(redactedPdf);
 }

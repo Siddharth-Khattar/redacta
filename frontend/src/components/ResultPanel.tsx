@@ -3,12 +3,11 @@
 
 import { CheckCircle, ChevronDown, ChevronUp, ImageOff, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  base64ToBlobUrl,
-  type HighlightColor,
-  type ImageFillColor,
-  type ImageRedactionSettings,
-  type RedactionResponse,
+import type {
+  HighlightColor,
+  ImageFillColor,
+  ImageRedactionSettings,
+  RedactionResponse,
 } from "../api/redaction";
 
 const HIGHLIGHT_COLORS: { value: HighlightColor; bg: string; ring: string }[] = [
@@ -139,7 +138,7 @@ export function ResultPanel({ result, onRerender }: ResultPanelProps) {
   };
 
   useEffect(() => {
-    const url = base64ToBlobUrl(result.redacted_pdf);
+    const url = URL.createObjectURL(result.redacted_pdf);
     setBlobUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [result.redacted_pdf]);
